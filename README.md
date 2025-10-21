@@ -305,8 +305,8 @@ AdMeIn VAST Testing, VAST, Video Ad Serving Template, IAB, Go, Golang, Video Adv
 ## AdMeIn
 
 AdMeIn is a dedicated Video Ad testing platform made for developers and AdOps teams to test their VAST implementations with advanced feature results.
-- [AdMeIn VAST Tester / Validator](https://admein.in/vast-tester)
-- [AdMeIn VAST examples](https://admein.in/help/article/how-to-test-vast-url)
+- [AdMeIn VAST Tester / Validator](https://admein.io/vast-tester)
+- [AdMeIn VAST examples](https://admein.io/help/article/how-to-test-vast-url)
 
 ---
 
