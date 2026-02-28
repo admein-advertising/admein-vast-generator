@@ -285,6 +285,47 @@ func TestValidate_ExtensionAllowsCustomNodes(t *testing.T) {
 	}
 }
 
+func TestValidate_UnsupportedVersionReturnsResult(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+	<VAST version="5.0">
+	<Ad>
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Creatives>
+				<Creative>
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+								<MediaFile delivery="progressive" type="video/mp4" width="1" height="1">http://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	if result == nil || result.Root == nil {
+		t.Fatalf("expected validation result for unsupported version")
+	}
+	iab := result.Root.Analyses[IABAnalysisCategory]
+	if iab == nil {
+		t.Fatalf("expected IAB analysis on root")
+	}
+	if iab.Status != StatusFail {
+		t.Fatalf("expected root analysis to fail for unsupported version")
+	}
+	if !strings.Contains(iab.Reason, "Unsupported VAST version") {
+		t.Fatalf("expected unsupported version reason, got %q", iab.Reason)
+	}
+}
+
 func TestValidate_AdVerificationsUnsupportedInV3(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>

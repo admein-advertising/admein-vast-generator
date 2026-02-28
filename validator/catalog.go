@@ -84,6 +84,14 @@ func (spec *AttributeSpec) supports(version vast.Version) bool {
 }
 
 var (
+	versionsAll = []vast.Version{
+		vast.Version20,
+		vast.Version30,
+		vast.Version40,
+		vast.Version41,
+		vast.Version42,
+		vast.Version43,
+	}
 	allSupportedVersions = []vast.Version{
 		vast.Version30,
 		vast.Version40,
@@ -105,13 +113,13 @@ var (
 var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"VAST": {
 		Name:     "VAST",
-		Versions: allSupportedVersions,
+		Versions: versionsAll,
 		Attributes: map[string]*AttributeSpec{
-			"version": {Name: "version", Versions: allSupportedVersions, Required: true},
+			"version": {Name: "version", Versions: versionsAll, Required: true},
 		},
 		Children: map[string]*ChildSpec{
-			"Ad":    {Name: "Ad", Versions: allSupportedVersions, Multiple: true},
-			"Error": {Name: "Error", Versions: allSupportedVersions, Optional: true, Multiple: true},
+			"Ad":    {Name: "Ad", Versions: versionsAll, Multiple: true},
+			"Error": {Name: "Error", Versions: versionsAll, Optional: true, Multiple: true},
 		},
 	},
 	"Ad": {

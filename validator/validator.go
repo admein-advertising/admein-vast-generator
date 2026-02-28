@@ -12,11 +12,11 @@ import (
 
 var (
 	// ErrInvalidRoot is returned when the XML root element is not <VAST>.
-	ErrInvalidRoot = errors.New("validator: root element must be VAST")
+	ErrInvalidRoot = errors.New("Root element must be VAST")
 	// ErrMissingVersion indicates the version attribute is missing on <VAST>.
-	ErrMissingVersion = errors.New("validator: missing VAST version attribute")
+	ErrMissingVersion = errors.New("Missing VAST version attribute")
 	// ErrUnsupportedVersion indicates the provided version is not in catalog.
-	ErrUnsupportedVersion = errors.New("validator: unsupported VAST version")
+	ErrUnsupportedVersion = errors.New("Unsupported VAST version")
 )
 
 // Option configures the validation behavior.
@@ -98,11 +98,16 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	version := vast.Version(strings.TrimSpace(versionValue))
 
 	rootSpec, hasRootSpec := cfg.catalog.node("VAST")
-	if !hasRootSpec || !rootSpec.supports(version) {
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
+	if !hasRootSpec {
+		return nil, fmt.Errorf("validator: catalog missing VAST spec")
 	}
+	rootVersionSupported := rootSpec.supports(version)
 
 	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false)
+	if !rootVersionSupported {
+		iab := rootResult.addAnalysis(IABAnalysisCategory)
+		markFailure(iab, fmt.Sprintf("%s: %s", ErrUnsupportedVersion.Error(), version))
+	}
 
 	return &ValidationResult{Version: version, Root: rootResult, Summaries: summarizeCategories(rootResult)}, nil
 }
