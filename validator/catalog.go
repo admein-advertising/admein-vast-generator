@@ -402,6 +402,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"NonLinearClickTracking": {
 		Name:     "NonLinearClickTracking",
 		Versions: supported30Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported30Plus},
+		},
 	},
 	"NonLinearClickThrough": {
 		Name:     "NonLinearClickThrough",
@@ -452,6 +455,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"CompanionClickTracking": {
 		Name:     "CompanionClickTracking",
 		Versions: supported30Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported30Plus},
+		},
 	},
 	"AltText": {
 		Name:     "AltText",
@@ -502,6 +508,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"IconClickTracking": {
 		Name:     "IconClickTracking",
 		Versions: supported30Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported30Plus},
+		},
 	},
 	"IconClickFallbackImages": {
 		Name:     "IconClickFallbackImages",
@@ -668,10 +677,16 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"ClickTracking": {
 		Name:     "ClickTracking",
 		Versions: supported20Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported30Plus},
+		},
 	},
 	"CustomClick": {
 		Name:     "CustomClick",
 		Versions: supported30Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported30Plus},
+		},
 	},
 	"TrackingEvents": {
 		Name:     "TrackingEvents",
