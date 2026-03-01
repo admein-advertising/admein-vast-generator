@@ -24,7 +24,7 @@ type AttributeResult struct {
 type NodeAnalysisResult struct {
 	Category   string            `json:"category"`
 	Status     ResultStatus      `json:"status"`
-	Reason     string            `json:"reason,omitempty"`
+	Reasons    []string          `json:"reason,omitempty"`
 	Attributes []AttributeResult `json:"attributes,omitempty"`
 }
 
@@ -91,8 +91,11 @@ func summarizeCategories(root *NodeResult) map[string]*CategorySummary {
 			if analysis.Status == StatusFail {
 				summary.FailingNodes++
 				summary.Status = StatusFail
-				if analysis.Reason != "" && len(summary.Reasons) < 5 {
-					summary.Reasons = append(summary.Reasons, analysis.Reason)
+				for _, reason := range analysis.Reasons {
+					if len(summary.Reasons) >= 5 {
+						break
+					}
+					summary.Reasons = append(summary.Reasons, reason)
 				}
 			}
 		}

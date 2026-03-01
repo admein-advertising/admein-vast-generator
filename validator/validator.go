@@ -255,7 +255,8 @@ func applyHTTPValidators(nodeResult *NodeResult, node *genericNode, version vast
 	for _, validator := range validators {
 		analysis, err := validator(ctx, NodeContext{Node: node, Version: version}, client)
 		if err != nil {
-			analysis = &NodeAnalysisResult{Category: CustomAnalysisCategory, Status: StatusFail, Reason: err.Error()}
+			analysis = &NodeAnalysisResult{Category: CustomAnalysisCategory}
+			markFailure(analysis, err.Error())
 		}
 		if analysis == nil {
 			continue
@@ -278,22 +279,21 @@ func mergeAnalysis(nodeResult *NodeResult, analysis *NodeAnalysisResult) {
 	}
 	existing.Attributes = append(existing.Attributes, analysis.Attributes...)
 	if analysis.Status == StatusFail {
-		markFailure(existing, analysis.Reason)
+		markFailure(existing, analysis.Reasons...)
 	}
 }
 
-func markFailure(analysis *NodeAnalysisResult, reason string) {
+func markFailure(analysis *NodeAnalysisResult, reasons ...string) {
+	if analysis == nil {
+		return
+	}
 	if analysis.Status != StatusFail {
 		analysis.Status = StatusFail
-		analysis.Reason = reason
-		return
 	}
-	if reason == "" {
-		return
+	for _, reason := range reasons {
+		if reason == "" {
+			continue
+		}
+		analysis.Reasons = append(analysis.Reasons, reason)
 	}
-	if analysis.Reason == "" {
-		analysis.Reason = reason
-		return
-	}
-	analysis.Reason += "; " + reason
 }

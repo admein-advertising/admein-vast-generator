@@ -61,7 +61,7 @@ func TestValidate_UnknownNode(t *testing.T) {
 	if analysis == nil || analysis.Status != StatusFail {
 		t.Fatalf("expected failure for unknown node, got %+v", analysis)
 	}
-	if analysis.Reason == "" {
+	if len(analysis.Reasons) == 0 {
 		t.Fatalf("expected reason for unknown node failure")
 	}
 }
@@ -72,7 +72,7 @@ func TestValidate_CustomValidator(t *testing.T) {
 		return &NodeAnalysisResult{
 			Category: CustomAnalysisCategory,
 			Status:   StatusFail,
-			Reason:   "media file URL failed custom check",
+			Reasons:  []string{"media file URL failed custom check"},
 		}
 	})
 
@@ -107,7 +107,7 @@ func TestValidate_HTTPValidator(t *testing.T) {
 		return &NodeAnalysisResult{
 			Category: CustomAnalysisCategory,
 			Status:   StatusFail,
-			Reason:   "HTTP check failed",
+			Reasons:  []string{"HTTP check failed"},
 		}, nil
 	})
 
@@ -174,8 +174,8 @@ func TestValidate_BuiltInMediaFileHTTPValidatorFailure(t *testing.T) {
 	if analysis == nil || analysis.Status != StatusFail {
 		t.Fatalf("expected built-in HTTP validator to fail, got %+v", analysis)
 	}
-	if analysis.Reason == "" || !strings.Contains(analysis.Reason, "HTTP") {
-		t.Fatalf("expected failure reason mentioning HTTP status, got %q", analysis.Reason)
+	if len(analysis.Reasons) == 0 || !strings.Contains(strings.Join(analysis.Reasons, ";"), "HTTP") {
+		t.Fatalf("expected failure reason mentioning HTTP status, got %+v", analysis.Reasons)
 	}
 }
 
@@ -185,7 +185,7 @@ func TestValidate_CategorySummaries(t *testing.T) {
 		return &NodeAnalysisResult{
 			Category: CustomAnalysisCategory,
 			Status:   StatusFail,
-			Reason:   "linear custom failure",
+			Reasons:  []string{"linear custom failure"},
 		}
 	})
 	xml := `<?xml version="1.0" encoding="UTF-8"?>
@@ -321,8 +321,8 @@ func TestValidate_UnsupportedVersionReturnsResult(t *testing.T) {
 	if iab.Status != StatusFail {
 		t.Fatalf("expected root analysis to fail for unsupported version")
 	}
-	if !strings.Contains(iab.Reason, "Unsupported VAST version") {
-		t.Fatalf("expected unsupported version reason, got %q", iab.Reason)
+	if len(iab.Reasons) == 0 || !strings.Contains(strings.Join(iab.Reasons, ";"), "Unsupported VAST version") {
+		t.Fatalf("expected unsupported version reason, got %+v", iab.Reasons)
 	}
 }
 
@@ -369,8 +369,8 @@ func TestValidate_AdVerificationsUnsupportedInV3(t *testing.T) {
 	if analysis.Status != StatusFail {
 		t.Fatalf("expected AdVerifications to fail for VAST 3.0, got status %s", analysis.Status)
 	}
-	if analysis.Reason == "" || !strings.Contains(analysis.Reason, "not supported") {
-		t.Fatalf("expected failure reason mentioning support, got %q", analysis.Reason)
+	if len(analysis.Reasons) == 0 || !strings.Contains(strings.Join(analysis.Reasons, ";"), "not supported") {
+		t.Fatalf("expected failure reason mentioning support, got %+v", analysis.Reasons)
 	}
 }
 
