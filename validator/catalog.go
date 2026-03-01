@@ -99,22 +99,22 @@ var (
 		vast.Version42,
 		vast.Version43,
 	}
-	supported40 = []vast.Version{
-		vast.Version40,
-	}
-	supported41 = []vast.Version{
-		vast.Version41,
-	}
-	supported42 = []vast.Version{
-		vast.Version42,
-	}
-	supported43 = []vast.Version{
-		vast.Version43,
-	}
 	supported40Plus = []vast.Version{
 		vast.Version40,
 		vast.Version41,
 		vast.Version42,
+		vast.Version43,
+	}
+	supported41Plus = []vast.Version{
+		vast.Version41,
+		vast.Version42,
+		vast.Version43,
+	}
+	supported42Plus = []vast.Version{
+		vast.Version42,
+		vast.Version43,
+	}
+	supported43Plus = []vast.Version{
 		vast.Version43,
 	}
 )
@@ -141,7 +141,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"id":            {Name: "id", Versions: supported20Plus},
 			"sequence":      {Name: "sequence", Versions: supported30Plus},
 			"conditionalAd": {Name: "conditionalAd", Versions: supported40Plus},
-			"adType":        {Name: "adType", Versions: supported41},
+			"adType":        {Name: "adType", Versions: supported41Plus},
 		},
 		Children: map[string]*ChildSpec{
 			"InLine":  {Name: "InLine", Versions: supported20Plus, Optional: true},
@@ -219,6 +219,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"Advertiser": {
 		Name:     "Advertiser",
 		Versions: supported30Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported41Plus},
+		},
 	},
 	"Category": {
 		Name:     "Category",
@@ -298,6 +301,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported40Plus,
 		Attributes: map[string]*AttributeSpec{
 			"idRegistry": {Name: "idRegistry", Versions: supported40Plus, Required: true},
+			"idValue":    {Name: "idValue", Versions: supported40Plus, Required: true},
 		},
 	},
 	"AdVerifications": {
@@ -334,6 +338,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Attributes: map[string]*AttributeSpec{
 			"apiFramework": {Name: "apiFramework", Versions: supported30Plus},
 			"type":         {Name: "type", Versions: supported30Plus},
+			"language":     {Name: "language", Versions: supported41Plus},
 		},
 	},
 	"VerificationParameters": {
@@ -433,6 +438,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"expandedHeight": {Name: "expandedHeight", Versions: supported30Plus},
 			"apiFramework":   {Name: "apiFramework", Versions: supported20Plus},
 			"adSlotId":       {Name: "adSlotId", Versions: supported30Plus},
+			"logoTile":       {Name: "logoTile", Versions: supported40Plus},
+			"logoTitle":      {Name: "logoTitle", Versions: supported40Plus},
+			"logoArtist":     {Name: "logoArtist", Versions: supported40Plus},
+			"logoURL":        {Name: "logoURL", Versions: supported40Plus},
 			"pxratio":        {Name: "pxratio", Versions: supported30Plus},
 			"renderingMode":  {Name: "renderingMode", Versions: supported30Plus},
 		},
@@ -618,7 +627,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"maintainAspectRatio": {Name: "maintainAspectRatio", Versions: supported30Plus},
 			"fileSize":            {Name: "fileSize", Versions: supported30Plus},
 			"mediaType":           {Name: "mediaType", Versions: supported30Plus},
-			"apiFramework":        {Name: "apiFramework", Versions: supported30Plus},
+			"apiFramework":        {Name: "apiFramework", Versions: supported41Plus},
 		},
 	},
 	"ClosedCaptionFiles": {
@@ -647,6 +656,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"codec":     {Name: "codec", Versions: supported30Plus},
 			"fileSize":  {Name: "fileSize", Versions: supported30Plus},
 			"mediaType": {Name: "mediaType", Versions: supported30Plus},
+			"id":        {Name: "id", Versions: supported41Plus},
 		},
 	},
 	"InteractiveCreativeFile": {
