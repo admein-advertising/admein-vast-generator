@@ -114,9 +114,6 @@ var (
 		vast.Version42,
 		vast.Version43,
 	}
-	supported43Plus = []vast.Version{
-		vast.Version43,
-	}
 )
 
 // defaultCatalog contains a subset of the IAB VAST specification, focused on the
@@ -274,6 +271,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"ViewableImpression": {
 		Name:     "ViewableImpression",
 		Versions: supported40Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id": {Name: "id", Versions: supported42Plus},
+		},
 		Children: map[string]*ChildSpec{
 			"Viewable":         {Name: "Viewable", Versions: supported40Plus, Optional: true, Multiple: true},
 			"NotViewable":      {Name: "NotViewable", Versions: supported40Plus, Optional: true, Multiple: true},
@@ -505,7 +505,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "IconClicks",
 		Versions: supported30Plus,
 		Children: map[string]*ChildSpec{
-			"IconClickFallbackImages": {Name: "IconClickFallbackImages", Versions: supported30Plus, Optional: true},
+			"IconClickFallbackImages": {Name: "IconClickFallbackImages", Versions: supported42Plus, Optional: true},
 			"IconClickThrough":        {Name: "IconClickThrough", Versions: supported30Plus, Optional: true},
 			"IconClickTracking":       {Name: "IconClickTracking", Versions: supported30Plus, Optional: true, Multiple: true},
 		},
@@ -523,21 +523,21 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	},
 	"IconClickFallbackImages": {
 		Name:     "IconClickFallbackImages",
-		Versions: supported30Plus,
+		Versions: supported42Plus,
 		Children: map[string]*ChildSpec{
-			"IconClickFallbackImage": {Name: "IconClickFallbackImage", Versions: supported30Plus, Multiple: true},
+			"IconClickFallbackImage": {Name: "IconClickFallbackImage", Versions: supported42Plus, Multiple: true},
 		},
 	},
 	"IconClickFallbackImage": {
 		Name:     "IconClickFallbackImage",
-		Versions: supported30Plus,
+		Versions: supported42Plus,
 		Attributes: map[string]*AttributeSpec{
-			"width":  {Name: "width", Versions: supported30Plus},
-			"height": {Name: "height", Versions: supported30Plus},
+			"width":  {Name: "width", Versions: supported42Plus},
+			"height": {Name: "height", Versions: supported42Plus},
 		},
 		Children: map[string]*ChildSpec{
-			"AltText":        {Name: "AltText", Versions: supported30Plus, Optional: true},
-			"StaticResource": {Name: "StaticResource", Versions: supported30Plus, Optional: true},
+			"AltText":        {Name: "AltText", Versions: supported42Plus, Optional: true},
+			"StaticResource": {Name: "StaticResource", Versions: supported42Plus, Optional: true},
 		},
 	},
 	"IconViewTracking": {
