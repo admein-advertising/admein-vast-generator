@@ -174,33 +174,37 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 
 		if spec == nil {
 			attributeResult.Status = StatusFail
-			attributeResult.Reason = "node is not recognized; attribute cannot be validated"
+			msg := "node is not recognized; attribute cannot be validated"
+			attributeResult.addReason(msg)
 			analysis.addAttribute(attributeResult)
-			markFailure(analysis, attributeResult.Reason)
+			markFailure(analysis, msg)
 			continue
 		}
 
 		attrSpec, ok := spec.attribute(attrName)
 		if !ok {
 			attributeResult.Status = StatusFail
-			attributeResult.Reason = fmt.Sprintf("attribute %s is not allowed on %s", attrName, spec.Name)
+			msg := fmt.Sprintf("attribute %s is not allowed on %s", attrName, spec.Name)
+			attributeResult.addReason(msg)
 			analysis.addAttribute(attributeResult)
-			markFailure(analysis, attributeResult.Reason)
+			markFailure(analysis, msg)
 			continue
 		}
 		attributeResult.VersionSupport = attrSpec.Versions
 
 		if !attrSpec.supports(version) {
 			attributeResult.Status = StatusFail
-			attributeResult.Reason = fmt.Sprintf("attribute %s is not supported in VAST %s", attrName, version)
-			markFailure(analysis, attributeResult.Reason)
+			msg := fmt.Sprintf("attribute %s is not supported in VAST %s", attrName, version)
+			attributeResult.addReason(msg)
+			markFailure(analysis, msg)
 		}
 
 		value := strings.TrimSpace(attr.Value)
 		if value == "" && !attrSpec.AllowEmpty {
 			attributeResult.Status = StatusFail
-			attributeResult.Reason = fmt.Sprintf("attribute %s cannot be empty", attrName)
-			markFailure(analysis, attributeResult.Reason)
+			msg := fmt.Sprintf("attribute %s cannot be empty", attrName)
+			attributeResult.addReason(msg)
+			markFailure(analysis, msg)
 		}
 
 		analysis.addAttribute(attributeResult)
@@ -217,13 +221,14 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		if seen[attrSpec.Name] {
 			continue
 		}
+		msg := fmt.Sprintf("missing required attribute %s", attrSpec.Name)
 		analysis.addAttribute(AttributeResult{
 			Name:           attrSpec.Name,
 			VersionSupport: attrSpec.Versions,
 			Status:         StatusFail,
-			Reason:         fmt.Sprintf("missing required attribute %s", attrSpec.Name),
+			Reasons:        []string{msg},
 		})
-		markFailure(analysis, fmt.Sprintf("missing required attribute %s", attrSpec.Name))
+		markFailure(analysis, msg)
 	}
 }
 

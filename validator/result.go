@@ -16,7 +16,15 @@ type AttributeResult struct {
 	Name           string         `json:"name"`
 	VersionSupport []vast.Version `json:"versionSupport,omitempty"`
 	Status         ResultStatus   `json:"status"`
-	Reason         string         `json:"reason,omitempty"`
+	Reasons        []string       `json:"reason,omitempty"`
+}
+
+// addReason ensures reason slices stay non-nil before serialization.
+func (ar *AttributeResult) addReason(reason string) {
+	if reason == "" {
+		return
+	}
+	ar.Reasons = append(ar.Reasons, reason)
 }
 
 // NodeAnalysisResult encapsulates all results for a specific analysis category
