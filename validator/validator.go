@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -119,6 +120,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 	}
 	if spec != nil {
 		result.VersionSupport = spec.Versions
+		result.IntroducedAt = introducedAtFromVersions(spec.Versions)
 	}
 
 	iabAnalysis := result.addAnalysis(IABAnalysisCategory)
@@ -184,13 +186,14 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		attrSpec, ok := spec.attribute(attrName)
 		if !ok {
 			attributeResult.Status = StatusFail
-			msg := fmt.Sprintf("attribute %s is not allowed on %s", attrName, spec.Name)
+			msg := fmt.Sprintf("attribute %s is not allowed on %s for version %s", attrName, spec.Name, version)
 			attributeResult.addReason(msg)
 			analysis.addAttribute(attributeResult)
 			markFailure(analysis, msg)
 			continue
 		}
 		attributeResult.VersionSupport = attrSpec.Versions
+		attributeResult.IntroducedAt = introducedAtFromVersions(attrSpec.Versions)
 
 		if !attrSpec.supports(version) {
 			attributeResult.Status = StatusFail
@@ -224,12 +227,47 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		msg := fmt.Sprintf("missing required attribute %s", attrSpec.Name)
 		analysis.addAttribute(AttributeResult{
 			Name:           attrSpec.Name,
+			IntroducedAt:   introducedAtFromVersions(attrSpec.Versions),
 			VersionSupport: attrSpec.Versions,
 			Status:         StatusFail,
 			Reasons:        []string{msg},
 		})
 		markFailure(analysis, msg)
 	}
+}
+
+func introducedAtFromVersions(versions []vast.Version) *float64 {
+	if len(versions) == 0 {
+		return nil
+	}
+	var min float64
+	found := false
+	for _, version := range versions {
+		value, ok := vastVersionToFloat(version)
+		if !ok {
+			continue
+		}
+		if !found || value < min {
+			min = value
+			found = true
+		}
+	}
+	if !found {
+		return nil
+	}
+	return &min
+}
+
+func vastVersionToFloat(version vast.Version) (float64, bool) {
+	trimmed := strings.TrimSpace(string(version))
+	if trimmed == "" {
+		return 0, false
+	}
+	value, err := strconv.ParseFloat(trimmed, 64)
+	if err != nil {
+		return 0, false
+	}
+	return value, true
 }
 
 func applyCustomValidators(nodeResult *NodeResult, node *genericNode, version vast.Version) {

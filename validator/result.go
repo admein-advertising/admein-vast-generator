@@ -14,6 +14,7 @@ const (
 // AttributeResult captures the outcome of validating a single attribute.
 type AttributeResult struct {
 	Name           string         `json:"name"`
+	IntroducedAt   *float64       `json:"introducedAt"`
 	VersionSupport []vast.Version `json:"versionSupport,omitempty"`
 	Status         ResultStatus   `json:"status"`
 	Reasons        []string       `json:"reason,omitempty"`
@@ -45,6 +46,7 @@ func (nar *NodeAnalysisResult) addAttribute(result AttributeResult) {
 // analysis categories and nested child results.
 type NodeResult struct {
 	Node           string                         `json:"node"`
+	IntroducedAt   *float64                       `json:"introducedAt"`
 	VersionSupport []vast.Version                 `json:"versionSupport,omitempty"`
 	Analyses       map[string]*NodeAnalysisResult `json:"analyses,omitempty"`
 	Children       []*NodeResult                  `json:"children,omitempty"`
