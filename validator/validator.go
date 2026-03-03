@@ -196,6 +196,10 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 
 	for _, attr := range node.Attrs {
 		attrName := attr.Name.Local
+		if attr.Name.Space != "" || strings.EqualFold(attrName, "xmlns") {
+			// Skip namespace declarations or namespace-scoped attributes; they are not part of VAST validation.
+			continue
+		}
 		attributeResult := AttributeResult{Name: attrName, Status: StatusPass}
 		resolvedName := attrName
 
