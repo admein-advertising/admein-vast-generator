@@ -1,6 +1,10 @@
 package validator
 
-import "github.com/admein-advertising/admein-vast-generator/vast"
+import (
+	"strings"
+
+	"github.com/admein-advertising/admein-vast-generator/vast"
+)
 
 // AttributeSpec describes a valid attribute for a node.
 type AttributeSpec struct {
@@ -40,6 +44,18 @@ func (c *Catalog) node(name string) (*NodeSpec, bool) {
 	return spec, ok
 }
 
+func (c *Catalog) nodeCaseInsensitive(name string) (*NodeSpec, string, bool) {
+	if c == nil {
+		return nil, "", false
+	}
+	for key, spec := range c.Nodes {
+		if strings.EqualFold(key, name) {
+			return spec, key, true
+		}
+	}
+	return nil, "", false
+}
+
 func (spec *NodeSpec) supports(version vast.Version) bool {
 	for _, v := range spec.Versions {
 		if v == version {
@@ -57,12 +73,36 @@ func (spec *NodeSpec) attribute(name string) (*AttributeSpec, bool) {
 	return attr, ok
 }
 
+func (spec *NodeSpec) attributeCaseInsensitive(name string) (*AttributeSpec, string, bool) {
+	if spec == nil {
+		return nil, "", false
+	}
+	for key, attr := range spec.Attributes {
+		if strings.EqualFold(key, name) {
+			return attr, key, true
+		}
+	}
+	return nil, "", false
+}
+
 func (spec *NodeSpec) child(name string) (*ChildSpec, bool) {
 	if spec == nil {
 		return nil, false
 	}
 	child, ok := spec.Children[name]
 	return child, ok
+}
+
+func (spec *NodeSpec) childCaseInsensitive(name string) (*ChildSpec, string, bool) {
+	if spec == nil {
+		return nil, "", false
+	}
+	for key, child := range spec.Children {
+		if strings.EqualFold(key, name) {
+			return child, key, true
+		}
+	}
+	return nil, "", false
 }
 
 func (spec *ChildSpec) supports(version vast.Version) bool {

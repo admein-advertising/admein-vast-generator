@@ -118,6 +118,14 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		Node:           node.localName(),
 		VersionSupport: nil,
 	}
+
+	var nodeCaseMismatch string
+	if spec == nil {
+		if matchedSpec, canonicalName, ok := cfg.catalog.nodeCaseInsensitive(result.Node); ok {
+			spec = matchedSpec
+			nodeCaseMismatch = canonicalName
+		}
+	}
 	if spec != nil {
 		result.VersionSupport = spec.Versions
 		result.IntroducedAt = introducedAtFromVersions(spec.Versions)
@@ -129,14 +137,31 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 			markFailure(iabAnalysis, fmt.Sprintf("node %s is not recognized in catalog", result.Node))
 		}
 	} else {
+		if nodeCaseMismatch != "" && nodeCaseMismatch != result.Node {
+			markFailure(iabAnalysis, fmt.Sprintf("node %s casing is invalid; use %s", result.Node, nodeCaseMismatch))
+		}
 		if !spec.supports(version) {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s is not supported in VAST %s", result.Node, version))
 		}
 		if parentSpec != nil && !parentAllowsUnknown {
-			if childSpec, ok := parentSpec.child(result.Node); !ok {
+			childSpec, ok := parentSpec.child(result.Node)
+			childCaseMismatch := ""
+			if !ok {
+				if matchedChild, canonicalName, ok := parentSpec.childCaseInsensitive(result.Node); ok {
+					childSpec = matchedChild
+					childCaseMismatch = canonicalName
+					ok = true
+				}
+			}
+			if !ok {
 				markFailure(iabAnalysis, fmt.Sprintf("node %s is not a valid child of %s", result.Node, parentSpec.Name))
-			} else if !childSpec.supports(version) {
-				markFailure(iabAnalysis, fmt.Sprintf("node %s is not allowed for parent %s in VAST %s", result.Node, parentSpec.Name, version))
+			} else {
+				if childCaseMismatch != "" && childCaseMismatch != result.Node {
+					markFailure(iabAnalysis, fmt.Sprintf("child node %s casing is invalid for parent %s; use %s", result.Node, parentSpec.Name, childCaseMismatch))
+				}
+				if !childSpec.supports(version) {
+					markFailure(iabAnalysis, fmt.Sprintf("node %s is not allowed for parent %s in VAST %s", result.Node, parentSpec.Name, version))
+				}
 			}
 		}
 	}
@@ -171,10 +196,11 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 
 	for _, attr := range node.Attrs {
 		attrName := attr.Name.Local
-		seen[attrName] = true
 		attributeResult := AttributeResult{Name: attrName, Status: StatusPass}
+		resolvedName := attrName
 
 		if spec == nil {
+			seen[resolvedName] = true
 			attributeResult.Status = StatusFail
 			msg := "node is not recognized; attribute cannot be validated"
 			attributeResult.addReason(msg)
@@ -184,6 +210,17 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		}
 
 		attrSpec, ok := spec.attribute(attrName)
+		caseMismatchName := ""
+		if !ok {
+			if matchedAttr, canonicalName, matchOk := spec.attributeCaseInsensitive(attrName); matchOk {
+				attrSpec = matchedAttr
+				caseMismatchName = canonicalName
+				resolvedName = canonicalName
+				ok = true
+			}
+		}
+		seen[resolvedName] = true
+
 		if !ok {
 			attributeResult.Status = StatusFail
 			msg := fmt.Sprintf("attribute %s is not allowed on %s for version %s", attrName, spec.Name, version)
@@ -194,6 +231,13 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		}
 		attributeResult.VersionSupport = attrSpec.Versions
 		attributeResult.IntroducedAt = introducedAtFromVersions(attrSpec.Versions)
+
+		if caseMismatchName != "" && caseMismatchName != attrName {
+			attributeResult.Status = StatusFail
+			msg := fmt.Sprintf("attribute %s casing is invalid; use %s", attrName, caseMismatchName)
+			attributeResult.addReason(msg)
+			markFailure(analysis, msg)
+		}
 
 		if !attrSpec.supports(version) {
 			attributeResult.Status = StatusFail
