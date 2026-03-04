@@ -648,7 +648,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Children: map[string]*ChildSpec{
 			"MediaFile":               {Name: "MediaFile", Versions: supported20Plus, Multiple: true},
 			"ClosedCaptionFiles":      {Name: "ClosedCaptionFiles", Versions: supported30Plus, Optional: true},
-			"Mezzanine":               {Name: "Mezzanine", Versions: supported30Plus, Optional: true, Multiple: true},
+			"Mezzanine":               {Name: "Mezzanine", Versions: supported40Plus, Optional: true, Multiple: true},
 			"InteractiveCreativeFile": {Name: "InteractiveCreativeFile", Versions: supported30Plus, Optional: true, Multiple: true},
 		},
 	},
