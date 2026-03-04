@@ -29,6 +29,7 @@ type NodeSpec struct {
 	Attributes           map[string]*AttributeSpec
 	Children             map[string]*ChildSpec
 	AllowUnknownChildren bool
+	SupportsExtensions   bool
 }
 
 // Catalog stores node specifications keyed by node name.
@@ -337,8 +338,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported30Plus,
 	},
 	"UniversalAdId": {
-		Name:     "UniversalAdId",
-		Versions: supported40Plus,
+		Name:               "UniversalAdId",
+		Versions:           supported40Plus,
+		SupportsExtensions: true,
 		Attributes: map[string]*AttributeSpec{
 			"idRegistry": {Name: "idRegistry", Versions: supported40Plus, Required: true},
 			"idValue":    {Name: "idValue", Versions: supported40Plus, Required: true},
@@ -686,8 +688,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Mezzanine": {
-		Name:     "Mezzanine",
-		Versions: supported30Plus,
+		Name:               "Mezzanine",
+		Versions:           supported30Plus,
+		SupportsExtensions: true,
 		Attributes: map[string]*AttributeSpec{
 			"delivery":  {Name: "delivery", Versions: supported30Plus, Required: true},
 			"type":      {Name: "type", Versions: supported30Plus, Required: true},
@@ -700,8 +703,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"InteractiveCreativeFile": {
-		Name:     "InteractiveCreativeFile",
-		Versions: supported30Plus,
+		Name:               "InteractiveCreativeFile",
+		Versions:           supported30Plus,
+		SupportsExtensions: true,
 		Attributes: map[string]*AttributeSpec{
 			"type":             {Name: "type", Versions: supported30Plus},
 			"apiFramework":     {Name: "apiFramework", Versions: supported30Plus},

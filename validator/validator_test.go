@@ -285,6 +285,197 @@ func TestValidate_ExtensionAllowsCustomNodes(t *testing.T) {
 	}
 }
 
+func TestValidate_ExtensionUniversalAdIdBackport(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<AdTitle>Sample</AdTitle>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="1" height="1">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+			<Extensions>
+				<Extension type="UniversalAdId">
+					<UniversalAdId idRegistry="ad-id.org" idValue="campaign-123">CNPA0484000H</UniversalAdId>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	uaid := findNode(result.Root, "UniversalAdId")
+	if uaid == nil {
+		t.Fatalf("expected UniversalAdId node in result")
+	}
+	analysis := uaid.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusPass {
+		t.Fatalf("expected UniversalAdId backport to pass, got %+v", analysis)
+	}
+}
+
+func TestValidate_ExtensionUniversalAdIdMissingChild(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Extensions>
+				<Extension type="UniversalAdId"></Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	ext := findNode(result.Root, "Extension")
+	if ext == nil {
+		t.Fatalf("expected Extension node in result")
+	}
+	analysis := ext.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusFail {
+		t.Fatalf("expected Extension validator to fail, got %+v", analysis)
+	}
+	joined := strings.Join(analysis.Reasons, ";")
+	if !strings.Contains(joined, "UniversalAdId") {
+		t.Fatalf("expected UniversalAdId failure reason, got %s", joined)
+	}
+}
+
+func TestValidate_ExtensionInteractiveCreativeFileBackport(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Extensions>
+				<Extension type="InteractiveCreativeFile">
+					<InteractiveCreativeFile type="text/html" apiFramework="SIMID" variableDuration="true">
+						<![CDATA[https://adserver.com/creative.html]]>
+					</InteractiveCreativeFile>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	icf := findNode(result.Root, "InteractiveCreativeFile")
+	if icf == nil {
+		t.Fatalf("expected InteractiveCreativeFile node in result")
+	}
+	analysis := icf.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusPass {
+		t.Fatalf("expected InteractiveCreativeFile backport to pass, got %+v", analysis)
+	}
+}
+
+func TestValidate_ExtensionMezzanineBackport(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="1" height="1">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+			<Extensions>
+				<Extension type="Mezzanine">
+					<Mezzanine delivery="streaming" type="video/mp4" width="7680" height="4320" codec="video/3gpp" fileSize="300MB" mediaType="2D">
+						<![CDATA[https://creative-company.com/mezzanine.mp4]]>
+					</Mezzanine>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	mezz := findNode(result.Root, "Mezzanine")
+	if mezz == nil {
+		t.Fatalf("expected Mezzanine node in result")
+	}
+	analysis := mezz.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusPass {
+		t.Fatalf("expected Mezzanine backport to pass, got %+v", analysis)
+	}
+}
+
+func TestValidate_ExtensionMezzanineMissingContent(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Extensions>
+				<Extension type="Mezzanine">
+					<Mezzanine delivery="streaming" type="video/mp4" width="7680" height="4320"></Mezzanine>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	ext := findNode(result.Root, "Extension")
+	if ext == nil {
+		t.Fatalf("expected Extension node in result")
+	}
+	analysis := ext.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusFail {
+		t.Fatalf("expected Mezzanine extension validator to fail, got %+v", analysis)
+	}
+	joined := strings.Join(analysis.Reasons, ";")
+	if !strings.Contains(joined, "Mezzanine") {
+		t.Fatalf("expected Mezzanine failure reason, got %s", joined)
+	}
+}
+
 func TestValidate_UnsupportedVersionReturnsResult(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>
@@ -488,4 +679,5 @@ func resetCustom(t *testing.T) {
 	HTTPValidatorRegistry.store = map[string][]HTTPValidatorFunc{}
 	HTTPValidatorRegistry.mu.Unlock()
 	registerBuiltInHTTPValidators()
+	resetExtensionValidators()
 }

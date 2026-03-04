@@ -126,6 +126,8 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 			nodeCaseMismatch = canonicalName
 		}
 	}
+	extensionBackport := spec != nil && spec.SupportsExtensions && isExtensionContainerSpec(parentSpec)
+
 	if spec != nil {
 		result.VersionSupport = spec.Versions
 		result.IntroducedAt = introducedAtFromVersions(spec.Versions)
@@ -140,7 +142,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		if nodeCaseMismatch != "" && nodeCaseMismatch != result.Node {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s casing is invalid; use %s", result.Node, nodeCaseMismatch))
 		}
-		if !spec.supports(version) {
+		if !spec.supports(version) && !extensionBackport {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s is not supported in VAST %s", result.Node, version))
 		}
 		if parentSpec != nil && !parentAllowsUnknown {
@@ -166,8 +168,12 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		}
 	}
 
-	if !parentAllowsUnknown {
-		validateAttributes(node, version, spec, iabAnalysis)
+	if !parentAllowsUnknown || extensionBackport {
+		validateAttributes(node, version, spec, iabAnalysis, extensionBackport)
+	}
+
+	if isExtensionContainerSpec(spec) {
+		applyExtensionValidators(result, node, version)
 	}
 
 	if cfg.runCustom {
@@ -191,7 +197,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 	return result
 }
 
-func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec, analysis *NodeAnalysisResult) {
+func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec, analysis *NodeAnalysisResult, allowBackport bool) {
 	seen := map[string]bool{}
 
 	for _, attr := range node.Attrs {
@@ -243,7 +249,7 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 			markFailure(analysis, msg)
 		}
 
-		if !attrSpec.supports(version) {
+		if !attrSpec.supports(version) && !allowBackport {
 			attributeResult.Status = StatusFail
 			msg := fmt.Sprintf("attribute %s is not supported in VAST %s", attrName, version)
 			attributeResult.addReason(msg)
@@ -281,6 +287,18 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 			Reasons:        []string{msg},
 		})
 		markFailure(analysis, msg)
+	}
+}
+
+func isExtensionContainerSpec(spec *NodeSpec) bool {
+	if spec == nil {
+		return false
+	}
+	switch spec.Name {
+	case "Extension", "CreativeExtension":
+		return true
+	default:
+		return false
 	}
 }
 
