@@ -233,7 +233,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "AdSystem",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"version": {Name: "version", Versions: supported20Plus},
+			"version": {Name: "version", Versions: supported30Plus},
 		},
 	},
 	"Error": {
