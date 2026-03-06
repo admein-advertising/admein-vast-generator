@@ -104,7 +104,8 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	}
 	rootVersionSupported := rootSpec.supports(version)
 
-	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false)
+	rootPointer := buildSourcePointer("", root.localName(), 1)
+	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false, rootPointer)
 	if !rootVersionSupported {
 		iab := rootResult.addAnalysis(IABAnalysisCategory)
 		markFailure(iab, fmt.Sprintf("%s: %s", ErrUnsupportedVersion.Error(), version))
@@ -113,9 +114,10 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	return &ValidationResult{Version: version, Root: rootResult, Summaries: summarizeCategories(rootResult)}, nil
 }
 
-func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config, spec *NodeSpec, parentSpec *NodeSpec, parentAllowsUnknown bool) *NodeResult {
+func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config, spec *NodeSpec, parentSpec *NodeSpec, parentAllowsUnknown bool, sourcePointer string) *NodeResult {
 	result := &NodeResult{
 		Node:           node.localName(),
+		SourcePointer:  sourcePointer,
 		VersionSupport: nil,
 	}
 
@@ -188,13 +190,31 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		childAllowsUnknown = true
 	}
 
+	childOccurrences := map[string]int{}
 	for _, child := range node.Children {
-		childSpec, _ := cfg.catalog.node(child.localName())
-		childResult := validateNodeRecursive(child, version, cfg, childSpec, spec, childAllowsUnknown)
+		childName := child.localName()
+		childOccurrences[childName]++
+		childSpec, _ := cfg.catalog.node(childName)
+		childPointer := buildSourcePointer(sourcePointer, childName, childOccurrences[childName])
+		childResult := validateNodeRecursive(child, version, cfg, childSpec, spec, childAllowsUnknown, childPointer)
 		result.Children = append(result.Children, childResult)
 	}
 
 	return result
+}
+
+// applyExtensionValidators executes registered extension validators that match the given node and merges their results into the provided node result.
+func buildSourcePointer(parentPointer, nodeName string, occurrence int) string {
+	if nodeName == "" {
+		return parentPointer
+	}
+	if occurrence < 1 {
+		occurrence = 1
+	}
+	if parentPointer == "" {
+		return fmt.Sprintf("/%s[%d]", nodeName, occurrence)
+	}
+	return fmt.Sprintf("%s/%s[%d]", parentPointer, nodeName, occurrence)
 }
 
 func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec, analysis *NodeAnalysisResult, allowBackport bool) {

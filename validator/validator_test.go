@@ -44,6 +44,56 @@ func TestValidate_SuccessfulInline(t *testing.T) {
 	}
 }
 
+func TestValidate_AssignsSourcePointers(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+  <Ad id="ad-1">
+    <InLine>
+      <Creatives>
+        <Creative>
+          <Linear>
+            <TrackingEvents>
+              <Tracking event="start"><![CDATA[https://example.com/start]]></Tracking>
+              <Tracking event="firstQuartile"><![CDATA[https://example.com/q1]]></Tracking>
+              <Tracking event="midpoint"><![CDATA[https://example.com/mid]]></Tracking>
+            </TrackingEvents>
+          </Linear>
+        </Creative>
+      </Creatives>
+    </InLine>
+  </Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	if result.Root == nil {
+		t.Fatalf("expected root result")
+	}
+	if result.Root.SourcePointer != "/VAST[1]" {
+		t.Fatalf("expected root pointer /VAST[1], got %s", result.Root.SourcePointer)
+	}
+	trackingEvents := findNode(result.Root, "TrackingEvents")
+	if trackingEvents == nil {
+		t.Fatalf("expected TrackingEvents node in result")
+	}
+	expectedTrackingEventsPointer := "/VAST[1]/Ad[1]/InLine[1]/Creatives[1]/Creative[1]/Linear[1]/TrackingEvents[1]"
+	if trackingEvents.SourcePointer != expectedTrackingEventsPointer {
+		t.Fatalf("expected pointer %s, got %s", expectedTrackingEventsPointer, trackingEvents.SourcePointer)
+	}
+	if len(trackingEvents.Children) != 3 {
+		t.Fatalf("expected 3 Tracking children, got %d", len(trackingEvents.Children))
+	}
+	for index, child := range trackingEvents.Children {
+		expectedChildPointer := fmt.Sprintf("%s/Tracking[%d]", expectedTrackingEventsPointer, index+1)
+		if child.SourcePointer != expectedChildPointer {
+			t.Fatalf("expected child pointer %s, got %s", expectedChildPointer, child.SourcePointer)
+		}
+	}
+}
+
 func TestValidate_UnknownNode(t *testing.T) {
 	resetCustom(t)
 	xml := `<VAST version="4.2"><UnknownNode /></VAST>`
