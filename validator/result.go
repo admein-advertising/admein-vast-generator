@@ -14,6 +14,7 @@ const (
 // AttributeResult captures the outcome of validating a single attribute.
 type AttributeResult struct {
 	Name           string         `json:"name"`
+	Value          string         `json:"value,omitempty"`
 	IntroducedAt   *float64       `json:"introducedAt"`
 	VersionSupport []vast.Version `json:"versionSupport,omitempty"`
 	Status         ResultStatus   `json:"status"`

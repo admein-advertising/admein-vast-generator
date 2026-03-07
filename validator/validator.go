@@ -282,6 +282,8 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 			msg := fmt.Sprintf("attribute %s cannot be empty", attrName)
 			attributeResult.addReason(msg)
 			markFailure(analysis, msg)
+		} else {
+			attributeResult.Value = value
 		}
 
 		analysis.addAttribute(attributeResult)
