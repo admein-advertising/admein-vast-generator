@@ -274,6 +274,9 @@ func TestValidate_CategorySummaries(t *testing.T) {
 	if customSummary.Status != StatusFail || customSummary.FailingNodes == 0 {
 		t.Fatalf("expected failing custom summary, got %+v", customSummary)
 	}
+	if customSummary.WarningNodes != 0 || customSummary.RecommendationNodes != 0 {
+		t.Fatalf("expected no warnings or recommendations in custom summary, got %+v", customSummary)
+	}
 	if len(customSummary.Reasons) == 0 || customSummary.Reasons[0] != "linear custom failure" {
 		t.Fatalf("expected custom failure reason recorded")
 	}
@@ -409,6 +412,68 @@ func TestValidate_ExtensionUniversalAdIdMissingChild(t *testing.T) {
 	joined := strings.Join(analysis.Reasons, ";")
 	if !strings.Contains(joined, "UniversalAdId") {
 		t.Fatalf("expected UniversalAdId failure reason, got %s", joined)
+	}
+}
+
+func TestValidate_ExtensionTypeWarning(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+			<Extensions>
+				<Extension type="GDCM">
+					<UniversalAdId idRegistry="ad-id.org" idValue="campaign-123">CNPA0484000H</UniversalAdId>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	ext := findNode(result.Root, "Extension")
+	if ext == nil {
+		t.Fatalf("expected Extension node in result")
+	}
+	analysis := ext.Analyses[IABAnalysisCategory]
+	if analysis == nil {
+		t.Fatalf("expected IAB analysis for Extension")
+	}
+	if analysis.Status != StatusWarning {
+		t.Fatalf("expected warning status for Extension type mismatch, got %s", analysis.Status)
+	}
+	if len(analysis.Reasons) == 0 || !strings.Contains(strings.Join(analysis.Reasons, ";"), "type attribute value should") {
+		t.Fatalf("expected warning reason for Extension type mismatch, got %+v", analysis.Reasons)
+	}
+
+	iabSummary := result.Summaries[IABAnalysisCategory]
+	if iabSummary == nil {
+		t.Fatalf("expected IAB summary")
+	}
+	if iabSummary.Status != StatusWarning {
+		t.Fatalf("expected IAB summary warning status, got %+v", iabSummary)
+	}
+	if iabSummary.WarningNodes == 0 {
+		t.Fatalf("expected warning node count in summary, got %+v", iabSummary)
+	}
+	if iabSummary.FailingNodes != 0 {
+		t.Fatalf("expected zero failing nodes when only warnings present, got %+v", iabSummary)
 	}
 }
 

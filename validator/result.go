@@ -6,10 +6,41 @@ import "github.com/admein-advertising/admein-vast-generator/vast"
 type ResultStatus string
 
 const (
-	StatusPass ResultStatus = "pass"
-	StatusFail ResultStatus = "fail"
-	StatusInfo ResultStatus = "info"
+	StatusPass           ResultStatus = "pass"
+	StatusFail           ResultStatus = "fail"
+	StatusInfo           ResultStatus = "info"
+	StatusWarning        ResultStatus = "warning"
+	StatusRecommendation ResultStatus = "recommendation"
 )
+
+// statusPriority defines the severity order of validation results for comparison purposes.
+// Lower values indicate less severe outcomes, while higher values indicate more severe outcomes.
+// For example, a "fail" is more severe than a "warning", which is more severe than a "recommendation", and so on.
+var statusPriority = map[ResultStatus]int{
+	StatusPass:           0,
+	StatusInfo:           1,
+	StatusRecommendation: 2,
+	StatusWarning:        3,
+	StatusFail:           4,
+}
+
+// moreSevereStatus returns true if candidate status is more severe than current status.
+// Severity order: pass < info < recommendation < warning < fail
+func moreSevereStatus(current, candidate ResultStatus) bool {
+	return statusSeverity(candidate) > statusSeverity(current)
+}
+
+// statusSeverity returns the severity level of a given ResultStatus for comparison purposes.
+// If the status is unrecognized, it defaults to the severity of StatusPass.
+func statusSeverity(status ResultStatus) int {
+	if status == "" {
+		return statusPriority[StatusPass]
+	}
+	if severity, ok := statusPriority[status]; ok {
+		return severity
+	}
+	return statusPriority[StatusPass]
+}
 
 // AttributeResult captures the outcome of validating a single attribute.
 type AttributeResult struct {
@@ -76,11 +107,13 @@ type ValidationResult struct {
 
 // CategorySummary aggregates node results per analysis category for quick UI consumption.
 type CategorySummary struct {
-	Category     string       `json:"category"`
-	TotalNodes   int          `json:"totalNodes"`
-	FailingNodes int          `json:"failingNodes"`
-	Status       ResultStatus `json:"status"`
-	Reasons      []string     `json:"reasons,omitempty"`
+	Category            string       `json:"category"`
+	TotalNodes          int          `json:"totalNodes"`
+	FailingNodes        int          `json:"failingNodes"`
+	WarningNodes        int          `json:"warningNodes,omitempty"`
+	RecommendationNodes int          `json:"recommendationNodes,omitempty"`
+	Status              ResultStatus `json:"status"`
+	Reasons             []string     `json:"reasons,omitempty"`
 }
 
 func summarizeCategories(root *NodeResult) map[string]*CategorySummary {
@@ -102,7 +135,17 @@ func summarizeCategories(root *NodeResult) map[string]*CategorySummary {
 			summary.TotalNodes++
 			if analysis.Status == StatusFail {
 				summary.FailingNodes++
-				summary.Status = StatusFail
+			}
+			switch analysis.Status {
+			case StatusWarning:
+				summary.WarningNodes++
+			case StatusRecommendation:
+				summary.RecommendationNodes++
+			}
+			if moreSevereStatus(summary.Status, analysis.Status) {
+				summary.Status = analysis.Status
+			}
+			if analysis.Status != StatusPass {
 				for _, reason := range analysis.Reasons {
 					if len(summary.Reasons) >= 5 {
 						break

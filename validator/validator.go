@@ -409,17 +409,36 @@ func mergeAnalysis(nodeResult *NodeResult, analysis *NodeAnalysisResult) {
 		return
 	}
 	existing.Attributes = append(existing.Attributes, analysis.Attributes...)
-	if analysis.Status == StatusFail {
-		markFailure(existing, analysis.Reasons...)
-	}
+	markStatus(existing, analysis.Status, analysis.Reasons...)
 }
 
 func markFailure(analysis *NodeAnalysisResult, reasons ...string) {
+	markStatus(analysis, StatusFail, reasons...)
+}
+
+func markWarning(analysis *NodeAnalysisResult, reasons ...string) {
+	markStatus(analysis, StatusWarning, reasons...)
+}
+
+func markRecommendation(analysis *NodeAnalysisResult, reasons ...string) {
+	markStatus(analysis, StatusRecommendation, reasons...)
+}
+
+func markStatus(analysis *NodeAnalysisResult, status ResultStatus, reasons ...string) {
 	if analysis == nil {
 		return
 	}
-	if analysis.Status != StatusFail {
-		analysis.Status = StatusFail
+	if status == "" {
+		status = StatusPass
+	}
+	current := analysis.Status
+	if current == "" {
+		current = StatusPass
+	}
+	if moreSevereStatus(current, status) {
+		analysis.Status = status
+	} else if analysis.Status == "" {
+		analysis.Status = current
 	}
 	for _, reason := range reasons {
 		if reason == "" {

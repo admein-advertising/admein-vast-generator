@@ -195,15 +195,7 @@ func universalAdIDExtensionValidator(ctx ExtensionValidationContext) *NodeAnalys
 		markFailure(analysis, "UniversalAdId extension should declare type=\"UniversalAdId\"")
 	} else if !strings.EqualFold(extType, "UniversalAdId") {
 		analysis := ensureReport()
-		markFailure(analysis, "UniversalAdId extension type attribute value should be \"UniversalAdId\"")
-	}
-
-	for _, node := range nodes {
-		if strings.TrimSpace(node.Content) == "" {
-			analysis := ensureReport()
-			markFailure(analysis, "UniversalAdId value must not be empty")
-			break
-		}
+		markWarning(analysis, "UniversalAdId extension type attribute value should be \"UniversalAdId\"")
 	}
 
 	if report != nil && report.Status == StatusPass && len(report.Reasons) == 0 && len(report.Attributes) == 0 {
@@ -235,7 +227,7 @@ func interactiveCreativeFileExtensionValidator(ctx ExtensionValidationContext) *
 		markFailure(analysis, "InteractiveCreativeFile extension should declare type=\"InteractiveCreativeFile\"")
 	} else if !strings.EqualFold(extType, "InteractiveCreativeFile") {
 		analysis := ensureReport()
-		markFailure(analysis, "InteractiveCreativeFile extension type attribute value should be \"InteractiveCreativeFile\"")
+		markWarning(analysis, "InteractiveCreativeFile extension type attribute value should be \"InteractiveCreativeFile\"")
 	}
 
 	for _, node := range nodes {
@@ -275,7 +267,7 @@ func mezzanineExtensionValidator(ctx ExtensionValidationContext) *NodeAnalysisRe
 		markFailure(analysis, "Mezzanine extension should declare type=\"Mezzanine\"")
 	} else if !strings.EqualFold(extType, "Mezzanine") {
 		analysis := ensureReport()
-		markFailure(analysis, "Mezzanine extension type attribute value should be \"Mezzanine\"")
+		markWarning(analysis, "Mezzanine extension type attribute value should be \"Mezzanine\"")
 	}
 
 	for _, node := range nodes {
