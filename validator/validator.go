@@ -138,7 +138,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 	iabAnalysis := result.addAnalysis(IABAnalysisCategory)
 	if spec == nil {
 		if !parentAllowsUnknown {
-			markFailure(iabAnalysis, fmt.Sprintf("node %s is not recognized in catalog", result.Node))
+			markFailure(iabAnalysis, fmt.Sprintf("node %s is not a recognized VAST node. Check you have the correct spelling and casing.", result.Node))
 		}
 	} else {
 		if nodeCaseMismatch != "" && nodeCaseMismatch != result.Node {
