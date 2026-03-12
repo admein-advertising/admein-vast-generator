@@ -148,7 +148,7 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	}
 	if isVMAP {
 		iab := rootResult.addAnalysis(IABAnalysisCategory)
-		markWarning(iab, "VMAP validation is informational; declare VMAP compliance separately from VAST.")
+		markInformational(iab, "VMAP validation is informational only.")
 	}
 
 	return &ValidationResult{Version: version, Root: rootResult, Summaries: summarizeCategories(rootResult)}, nil
@@ -458,6 +458,10 @@ func markFailure(analysis *NodeAnalysisResult, reasons ...string) {
 
 func markWarning(analysis *NodeAnalysisResult, reasons ...string) {
 	markStatus(analysis, StatusWarning, reasons...)
+}
+
+func markInformational(analysis *NodeAnalysisResult, reasons ...string) {
+	markStatus(analysis, StatusInfo, reasons...)
 }
 
 func markRecommendation(analysis *NodeAnalysisResult, reasons ...string) {

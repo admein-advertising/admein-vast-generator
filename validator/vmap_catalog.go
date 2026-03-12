@@ -22,6 +22,7 @@ var defaultVMAPCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "AdBreak",
 		Versions: supportedVMAPVersions,
 		Attributes: map[string]*AttributeSpec{
+			"id":          {Name: "id", Versions: supportedVMAPVersions},
 			"timeOffset":  {Name: "timeOffset", Versions: supportedVMAPVersions, Required: true},
 			"breakType":   {Name: "breakType", Versions: supportedVMAPVersions},
 			"breakId":     {Name: "breakId", Versions: supportedVMAPVersions},
