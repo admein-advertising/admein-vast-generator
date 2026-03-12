@@ -477,6 +477,77 @@ func TestValidate_ExtensionTypeWarning(t *testing.T) {
 	}
 }
 
+func TestValidate_VMAPAcceptedWithWarning(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<vmap:VMAP xmlns:vmap="http://www.iab.net/videosuite/vmap" version="1.0">
+	<vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+		<vmap:AdSource id="pre-1" allowMultipleAds="false" followRedirects="true">
+			<vmap:AdTagURI templateType="vast3"><![CDATA[https://example.com/vast.xml]]></vmap:AdTagURI>
+		</vmap:AdSource>
+	</vmap:AdBreak>
+</vmap:VMAP>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	if result == nil || result.Root == nil {
+		t.Fatalf("expected VMAP validation result")
+	}
+	if result.Root.Node != "VMAP" {
+		t.Fatalf("expected root node VMAP, got %s", result.Root.Node)
+	}
+	iab := result.Root.Analyses[IABAnalysisCategory]
+	if iab == nil {
+		t.Fatalf("expected IAB analysis on VMAP root")
+	}
+	if iab.Status != StatusWarning {
+		t.Fatalf("expected VMAP root warning status, got %s", iab.Status)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "VMAP validation is informational") {
+		t.Fatalf("expected VMAP informational reason, got %s", joined)
+	}
+	iabSummary := result.Summaries[IABAnalysisCategory]
+	if iabSummary == nil || iabSummary.Status != StatusWarning {
+		t.Fatalf("expected IAB summary warning for VMAP, got %+v", iabSummary)
+	}
+}
+
+func TestValidate_VMAPUnknownAttributeFails(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VMAP version="1.0" xmlns="http://www.iab.net/videosuite/vmap">
+	<AdBreak timeOffset="start" breakType="linear" breakId="preroll">
+		<AdSource id="source-1" unknownAttr="nope">
+			<AdTagURI><![CDATA[https://example.com/vast.xml]]></AdTagURI>
+		</AdSource>
+	</AdBreak>
+</VMAP>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	adSource := findNode(result.Root, "AdSource")
+	if adSource == nil {
+		t.Fatalf("expected AdSource node")
+	}
+	analysis := adSource.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusFail {
+		t.Fatalf("expected AdSource failure for unknown attribute, got %+v", analysis)
+	}
+	joined := strings.Join(analysis.Reasons, ";")
+	if !strings.Contains(joined, "unknownAttr") {
+		t.Fatalf("expected reason mentioning unknownAttr, got %s", joined)
+	}
+	iabSummary := result.Summaries[IABAnalysisCategory]
+	if iabSummary == nil || iabSummary.Status != StatusFail {
+		t.Fatalf("expected failing summary for invalid VMAP, got %+v", iabSummary)
+	}
+}
+
 func TestValidate_ExtensionInteractiveCreativeFileBackport(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>

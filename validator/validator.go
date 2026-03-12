@@ -12,12 +12,14 @@ import (
 )
 
 var (
-	// ErrInvalidRoot is returned when the XML root element is not <VAST>.
-	ErrInvalidRoot = errors.New("Root element must be VAST")
+	// ErrInvalidRoot is returned when the XML root element is not a supported type.
+	ErrInvalidRoot = errors.New("Root element must be VAST or VMAP")
 	// ErrMissingVersion indicates the version attribute is missing on <VAST>.
 	ErrMissingVersion = errors.New("Missing VAST version attribute")
 	// ErrUnsupportedVersion indicates the provided version is not in catalog.
 	ErrUnsupportedVersion = errors.New("Unsupported VAST version")
+	// errMissingVMAPVersion indicates the version attribute is missing on <VMAP>.
+	errMissingVMAPVersion = errors.New("Missing VMAP version attribute")
 )
 
 // Option configures the validation behavior.
@@ -25,6 +27,8 @@ type Option func(*config)
 
 type config struct {
 	catalog     *Catalog
+	vastCatalog *Catalog
+	vmapCatalog *Catalog
 	runCustom   bool
 	runHTTP     bool
 	httpOptions HTTPValidationOptions
@@ -33,6 +37,8 @@ type config struct {
 func defaultConfig() *config {
 	return &config{
 		catalog:     defaultCatalog,
+		vastCatalog: defaultCatalog,
+		vmapCatalog: defaultVMAPCatalog,
 		runCustom:   true,
 		runHTTP:     true,
 		httpOptions: HTTPValidationOptions{Timeout: 2 * time.Second},
@@ -43,7 +49,16 @@ func defaultConfig() *config {
 func WithCatalog(catalog *Catalog) Option {
 	return func(cfg *config) {
 		if catalog != nil {
-			cfg.catalog = catalog
+			cfg.vastCatalog = catalog
+		}
+	}
+}
+
+// WithVMAPCatalog allows callers to substitute the catalog used for VMAP validation.
+func WithVMAPCatalog(catalog *Catalog) Option {
+	return func(cfg *config) {
+		if catalog != nil {
+			cfg.vmapCatalog = catalog
 		}
 	}
 }
@@ -88,27 +103,52 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 		return nil, err
 	}
 
-	if root.localName() != "VAST" {
+	rootName := root.localName()
+	var (
+		catalogForDoc *Catalog
+		rootNodeName  string
+		isVMAP        bool
+	)
+	switch {
+	case strings.EqualFold(rootName, "VAST"):
+		rootNodeName = "VAST"
+		catalogForDoc = cfg.vastCatalog
+	case strings.EqualFold(rootName, "VMAP"):
+		rootNodeName = "VMAP"
+		catalogForDoc = cfg.vmapCatalog
+		isVMAP = true
+	default:
 		return nil, ErrInvalidRoot
 	}
+	if catalogForDoc == nil {
+		return nil, fmt.Errorf("validator: no catalog configured for %s root", rootNodeName)
+	}
+	cfg.catalog = catalogForDoc
 
 	versionValue, ok := root.attrValue("version")
 	if !ok || strings.TrimSpace(versionValue) == "" {
-		return nil, ErrMissingVersion
+		if rootNodeName == "VAST" {
+			return nil, ErrMissingVersion
+		}
+		return nil, errMissingVMAPVersion
 	}
 	version := vast.Version(strings.TrimSpace(versionValue))
 
-	rootSpec, hasRootSpec := cfg.catalog.node("VAST")
+	rootSpec, hasRootSpec := catalogForDoc.node(rootNodeName)
 	if !hasRootSpec {
-		return nil, fmt.Errorf("validator: catalog missing VAST spec")
+		return nil, fmt.Errorf("validator: catalog missing %s spec", rootNodeName)
 	}
 	rootVersionSupported := rootSpec.supports(version)
 
-	rootPointer := buildSourcePointer("", root.localName(), 1)
+	rootPointer := buildSourcePointer("", rootNodeName, 1)
 	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false, rootPointer)
 	if !rootVersionSupported {
 		iab := rootResult.addAnalysis(IABAnalysisCategory)
-		markFailure(iab, fmt.Sprintf("%s: %s", ErrUnsupportedVersion.Error(), version))
+		markFailure(iab, fmt.Sprintf("Unsupported %s version: %s", rootNodeName, version))
+	}
+	if isVMAP {
+		iab := rootResult.addAnalysis(IABAnalysisCategory)
+		markWarning(iab, "VMAP validation is informational; declare VMAP compliance separately from VAST.")
 	}
 
 	return &ValidationResult{Version: version, Root: rootResult, Summaries: summarizeCategories(rootResult)}, nil
@@ -138,14 +178,14 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 	iabAnalysis := result.addAnalysis(IABAnalysisCategory)
 	if spec == nil {
 		if !parentAllowsUnknown {
-			markFailure(iabAnalysis, fmt.Sprintf("node %s is not a recognized VAST node. Check you have the correct spelling and casing.", result.Node))
+			markFailure(iabAnalysis, fmt.Sprintf("node %s is not recognized in the catalog. Check the spelling and casing.", result.Node))
 		}
 	} else {
 		if nodeCaseMismatch != "" && nodeCaseMismatch != result.Node {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s casing is invalid; use %s", result.Node, nodeCaseMismatch))
 		}
 		if !spec.supports(version) && !extensionBackport {
-			markFailure(iabAnalysis, fmt.Sprintf("node %s is not supported in VAST %s", result.Node, version))
+			markFailure(iabAnalysis, fmt.Sprintf("node %s is not supported in version %s", result.Node, version))
 		}
 		if parentSpec != nil && !parentAllowsUnknown {
 			childSpec, ok := parentSpec.child(result.Node)
@@ -164,7 +204,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 					markFailure(iabAnalysis, fmt.Sprintf("child node %s casing is invalid for parent %s; use %s", result.Node, parentSpec.Name, childCaseMismatch))
 				}
 				if !childSpec.supports(version) {
-					markFailure(iabAnalysis, fmt.Sprintf("node %s is not allowed for parent %s in VAST %s", result.Node, parentSpec.Name, version))
+					markFailure(iabAnalysis, fmt.Sprintf("node %s is not allowed for parent %s in version %s", result.Node, parentSpec.Name, version))
 				}
 			}
 		}
@@ -271,7 +311,7 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 
 		if !attrSpec.supports(version) && !allowBackport {
 			attributeResult.Status = StatusFail
-			msg := fmt.Sprintf("attribute %s is not supported in VAST %s", attrName, version)
+			msg := fmt.Sprintf("attribute %s is not supported in version %s", attrName, version)
 			attributeResult.addReason(msg)
 			markFailure(analysis, msg)
 		}
