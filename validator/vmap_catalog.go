@@ -6,6 +6,11 @@ var supportedVMAPVersions = []vast.Version{
 	"1.0",
 }
 
+// DefaultVMAPCatalog returns a defensive copy of the built-in VMAP catalog.
+func DefaultVMAPCatalog() *Catalog {
+	return cloneCatalog(defaultVMAPCatalog)
+}
+
 var defaultVMAPCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	"VMAP": {
 		Name:     "VMAP",

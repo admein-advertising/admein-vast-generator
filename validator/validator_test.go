@@ -9,6 +9,72 @@ import (
 	"testing"
 )
 
+func TestDefaultVASTCatalog_ReturnsDefensiveCopy(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	if cat == nil {
+		t.Fatalf("expected catalog copy")
+	}
+	if cat == defaultCatalog {
+		t.Fatalf("expected catalog copy to be distinct from default")
+	}
+	vastNode, ok := cat.Nodes["VAST"]
+	if !ok {
+		t.Fatalf("expected VAST node in catalog copy")
+	}
+	vastAttr, ok := vastNode.Attributes["version"]
+	if !ok {
+		t.Fatalf("expected version attr in VAST node")
+	}
+	vastAttr.Required = false
+	delete(cat.Nodes, "Ad")
+	fresh := DefaultVASTCatalog()
+	freshVAST, ok := fresh.Nodes["VAST"]
+	if !ok {
+		t.Fatalf("expected VAST node in fresh catalog")
+	}
+	freshVersion, ok := freshVAST.Attributes["version"]
+	if !ok {
+		t.Fatalf("expected version attribute in fresh catalog")
+	}
+	if !freshVersion.Required {
+		t.Fatalf("mutations to copy must not affect default catalog")
+	}
+	if _, ok := fresh.Nodes["Ad"]; !ok {
+		t.Fatalf("default catalog should still expose Ad node")
+	}
+}
+
+func TestDefaultVMAPCatalog_ReturnsDefensiveCopy(t *testing.T) {
+	cat := DefaultVMAPCatalog()
+	if cat == nil {
+		t.Fatalf("expected VMAP catalog copy")
+	}
+	if cat == defaultVMAPCatalog {
+		t.Fatalf("expected VMAP catalog copy to be distinct from default")
+	}
+	vmapNode, ok := cat.Nodes["VMAP"]
+	if !ok {
+		t.Fatalf("expected VMAP node in catalog copy")
+	}
+	vmapAttr, ok := vmapNode.Attributes["version"]
+	if !ok {
+		t.Fatalf("expected VMAP version attribute")
+	}
+	vmapAttr.Required = false
+	fresh := DefaultVMAPCatalog()
+	freshVMAP, ok := fresh.Nodes["VMAP"]
+	if !ok {
+		t.Fatalf("expected VMAP node in fresh catalog")
+	}
+	freshVersion, ok := freshVMAP.Attributes["version"]
+	if !ok {
+		t.Fatalf("expected version attribute in fresh VMAP catalog")
+	}
+	if !freshVersion.Required {
+		t.Fatalf("mutations to VMAP copy must not affect default catalog")
+	}
+}
+
 func TestValidate_SuccessfulInline(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>
@@ -502,16 +568,16 @@ func TestValidate_VMAPAcceptedWithWarning(t *testing.T) {
 	if iab == nil {
 		t.Fatalf("expected IAB analysis on VMAP root")
 	}
-	if iab.Status != StatusWarning {
-		t.Fatalf("expected VMAP root warning status, got %s", iab.Status)
+	if iab.Status != StatusInfo {
+		t.Fatalf("expected VMAP root informational status, got %s", iab.Status)
 	}
 	joined := strings.Join(iab.Reasons, ";")
 	if !strings.Contains(joined, "VMAP validation is informational") {
 		t.Fatalf("expected VMAP informational reason, got %s", joined)
 	}
 	iabSummary := result.Summaries[IABAnalysisCategory]
-	if iabSummary == nil || iabSummary.Status != StatusWarning {
-		t.Fatalf("expected IAB summary warning for VMAP, got %+v", iabSummary)
+	if iabSummary == nil || iabSummary.Status != StatusInfo {
+		t.Fatalf("expected IAB summary informational status for VMAP, got %+v", iabSummary)
 	}
 }
 

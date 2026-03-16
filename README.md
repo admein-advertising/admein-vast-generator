@@ -188,6 +188,33 @@ if errY != nil {
 }
 ```
 
+### Catalog Metadata
+
+External tools can inspect the validator's built-in catalogs and serialize them to JSON without re-implementing the rule set. Use the helpers in the `validator` package:
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "log"
+
+    "github.com/admein-advertising/admein-vast-generator/validator"
+)
+
+func main() {
+    vastCatalog := validator.DefaultVASTCatalog()
+    payload, err := json.MarshalIndent(vastCatalog, "", "  ")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Println(string(payload))
+
+    // VMAP users can call validator.DefaultVMAPCatalog() the same way.
+}
+```
+
 ## Examples
 
 ### Linear Video Ad with Tracking

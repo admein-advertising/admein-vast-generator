@@ -37,6 +37,12 @@ type Catalog struct {
 	Nodes map[string]*NodeSpec
 }
 
+// DefaultVASTCatalog returns a defensive copy of the built-in VAST catalog so
+// callers can inspect or serialize it without mutating validator defaults.
+func DefaultVASTCatalog() *Catalog {
+	return cloneCatalog(defaultCatalog)
+}
+
 func (c *Catalog) node(name string) (*NodeSpec, bool) {
 	if c == nil {
 		return nil, false
