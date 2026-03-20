@@ -404,6 +404,65 @@ func TestValidate_ExtensionAllowsCustomNodes(t *testing.T) {
 	}
 }
 
+func TestValidate_ExtensionAllowsUnknownAttributes(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<AdTitle>Sample</AdTitle>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+			<Extensions>
+				<Extension type="waterfall" fallback_index="0">
+					<CustomNode>value</CustomNode>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	ext := findNode(result.Root, "Extension")
+	if ext == nil {
+		t.Fatalf("expected Extension node in result")
+	}
+	analysis := ext.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusPass {
+		t.Fatalf("expected Extension node to pass, got %+v", analysis)
+	}
+
+	var fallbackAttr AttributeResult
+	found := false
+	for _, attr := range analysis.Attributes {
+		if attr.Name == "fallback_index" {
+			fallbackAttr = attr
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected fallback_index attribute result to be recorded")
+	}
+	if fallbackAttr.Status != StatusInfo {
+		t.Fatalf("expected fallback_index to be treated as informational, got %s", fallbackAttr.Status)
+	}
+}
+
 func TestValidate_ExtensionUniversalAdIdBackport(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>

@@ -18,11 +18,12 @@ func cloneNodeSpec(src *NodeSpec) *NodeSpec {
 		return nil
 	}
 	cloned := &NodeSpec{
-		Name:                 src.Name,
-		Versions:             cloneVersions(src.Versions),
-		AllowUnknownChildren: src.AllowUnknownChildren,
-		SupportsExtensions:   src.SupportsExtensions,
-		NeedsCDATA:           src.NeedsCDATA,
+		Name:                   src.Name,
+		Versions:               cloneVersions(src.Versions),
+		AllowUnknownChildren:   src.AllowUnknownChildren,
+		AllowUnknownAttributes: src.AllowUnknownAttributes,
+		SupportsExtensions:     src.SupportsExtensions,
+		NeedsCDATA:             src.NeedsCDATA,
 	}
 	if len(src.Attributes) > 0 {
 		cloned.Attributes = make(map[string]*AttributeSpec, len(src.Attributes))

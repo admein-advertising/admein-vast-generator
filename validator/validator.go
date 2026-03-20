@@ -292,6 +292,13 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		seen[resolvedName] = true
 
 		if !ok {
+			if spec.AllowUnknownAttributes {
+				attributeResult.Status = StatusInfo
+				msg := fmt.Sprintf("attribute %s is not defined in the catalog for %s; treating as custom", attrName, spec.Name)
+				attributeResult.addReason(msg)
+				analysis.addAttribute(attributeResult)
+				continue
+			}
 			attributeResult.Status = StatusFail
 			msg := fmt.Sprintf("attribute %s is not allowed on %s for version %s", attrName, spec.Name, version)
 			attributeResult.addReason(msg)

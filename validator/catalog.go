@@ -24,13 +24,14 @@ type ChildSpec struct {
 
 // NodeSpec defines the validation metadata for a node.
 type NodeSpec struct {
-	Name                 string
-	Versions             []vast.Version
-	Attributes           map[string]*AttributeSpec
-	Children             map[string]*ChildSpec
-	AllowUnknownChildren bool
-	SupportsExtensions   bool
-	NeedsCDATA           bool // Node text content must be wrapped in CDATA when generating VAST.
+	Name                   string
+	Versions               []vast.Version
+	Attributes             map[string]*AttributeSpec
+	Children               map[string]*ChildSpec
+	AllowUnknownChildren   bool
+	AllowUnknownAttributes bool
+	SupportsExtensions     bool
+	NeedsCDATA             bool // Node text content must be wrapped in CDATA when generating VAST.
 }
 
 // Catalog stores node specifications keyed by node name.
@@ -305,9 +306,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Extension": {
-		Name:                 "Extension",
-		Versions:             supported20Plus,
-		AllowUnknownChildren: true,
+		Name:                   "Extension",
+		Versions:               supported20Plus,
+		AllowUnknownChildren:   true,
+		AllowUnknownAttributes: true,
 		Attributes: map[string]*AttributeSpec{
 			"type": {Name: "type", Versions: supported20Plus},
 		},
@@ -615,9 +617,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"CreativeExtension": {
-		Name:                 "CreativeExtension",
-		Versions:             supported30Plus,
-		AllowUnknownChildren: true,
+		Name:                   "CreativeExtension",
+		Versions:               supported30Plus,
+		AllowUnknownChildren:   true,
+		AllowUnknownAttributes: true,
 		Attributes: map[string]*AttributeSpec{
 			"type": {Name: "type", Versions: supported30Plus},
 		},

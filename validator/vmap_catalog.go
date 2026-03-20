@@ -96,9 +96,10 @@ var defaultVMAPCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Extension": {
-		Name:                 "Extension",
-		Versions:             supportedVMAPVersions,
-		AllowUnknownChildren: true,
+		Name:                   "Extension",
+		Versions:               supportedVMAPVersions,
+		AllowUnknownChildren:   true,
+		AllowUnknownAttributes: true,
 		Attributes: map[string]*AttributeSpec{
 			"type":            {Name: "type", Versions: supportedVMAPVersions},
 			"suppress_bumper": {Name: "suppress_bumper", Versions: supportedVMAPVersions},
