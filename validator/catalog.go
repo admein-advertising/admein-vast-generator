@@ -661,6 +661,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Attributes: map[string]*AttributeSpec{
 			"xmlEncoded": {Name: "xmlEncoded", Versions: supported30Plus},
 		},
+		NeedsCDATA: true,
 	},
 	"Duration": {
 		Name:     "Duration",
