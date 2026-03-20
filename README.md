@@ -215,6 +215,8 @@ func main() {
 }
 ```
 
+Each node specification in the exported catalog includes a `needsCDATA` flag. When true, the node's text value should be wrapped in `<![CDATA[ ]]>` when generating VAST so URLs and markup-like strings remain intact.
+
 ## Examples
 
 ### Linear Video Ad with Tracking

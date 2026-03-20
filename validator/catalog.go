@@ -30,6 +30,7 @@ type NodeSpec struct {
 	Children             map[string]*ChildSpec
 	AllowUnknownChildren bool
 	SupportsExtensions   bool
+	NeedsCDATA           bool // Node text content must be wrapped in CDATA when generating VAST.
 }
 
 // Catalog stores node specifications keyed by node name.
@@ -243,12 +244,14 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Error": {
-		Name:     "Error",
-		Versions: supported20Plus,
+		Name:       "Error",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"Impression": {
-		Name:     "Impression",
-		Versions: supported20Plus,
+		Name:       "Impression",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
@@ -283,8 +286,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Description": {
-		Name:     "Description",
-		Versions: supported20Plus,
+		Name:       "Description",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"Survey": {
 		Name:     "Survey",
@@ -309,8 +313,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Pricing": {
-		Name:     "Pricing",
-		Versions: supported30Plus,
+		Name:       "Pricing",
+		Versions:   supported30Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"model":    {Name: "model", Versions: supported30Plus, Required: true},
 			"currency": {Name: "currency", Versions: supported30Plus, Required: true},
@@ -329,16 +334,19 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Viewable": {
-		Name:     "Viewable",
-		Versions: supported40Plus,
+		Name:       "Viewable",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 	},
 	"NotViewable": {
-		Name:     "NotViewable",
-		Versions: supported40Plus,
+		Name:       "NotViewable",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 	},
 	"ViewUndetermined": {
-		Name:     "ViewUndetermined",
-		Versions: supported40Plus,
+		Name:       "ViewUndetermined",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 	},
 	"Expires": {
 		Name:     "Expires",
@@ -375,16 +383,18 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"JavaScriptResource": {
-		Name:     "JavaScriptResource",
-		Versions: supported40Plus,
+		Name:       "JavaScriptResource",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"apiFramework":    {Name: "apiFramework", Versions: supported30Plus},
 			"browserOptional": {Name: "browserOptional", Versions: supported30Plus},
 		},
 	},
 	"ExecutableResource": {
-		Name:     "ExecutableResource",
-		Versions: supported40Plus,
+		Name:       "ExecutableResource",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"apiFramework": {Name: "apiFramework", Versions: supported30Plus},
 			"type":         {Name: "type", Versions: supported30Plus},
@@ -396,8 +406,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported40Plus,
 	},
 	"VASTAdTagURI": {
-		Name:     "VASTAdTagURI",
-		Versions: supported20Plus,
+		Name:       "VASTAdTagURI",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"Creatives": {
 		Name:     "Creatives",
@@ -454,15 +465,17 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"NonLinearClickTracking": {
-		Name:     "NonLinearClickTracking",
-		Versions: supported30Plus,
+		Name:       "NonLinearClickTracking",
+		Versions:   supported30Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
 	},
 	"NonLinearClickThrough": {
-		Name:     "NonLinearClickThrough",
-		Versions: supported20Plus,
+		Name:       "NonLinearClickThrough",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"CompanionAds": {
 		Name:     "CompanionAds",
@@ -507,8 +520,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"CompanionClickThrough": {
-		Name:     "CompanionClickThrough",
-		Versions: supported20Plus,
+		Name:       "CompanionClickThrough",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"CompanionClickTracking": {
 		Name:     "CompanionClickTracking",
@@ -609,19 +623,22 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"StaticResource": {
-		Name:     "StaticResource",
-		Versions: supported20Plus,
+		Name:       "StaticResource",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"creativeType": {Name: "creativeType", Versions: supported20Plus},
 		},
 	},
 	"HTMLResource": {
-		Name:     "HTMLResource",
-		Versions: supported20Plus,
+		Name:       "HTMLResource",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"IFrameResource": {
-		Name:     "IFrameResource",
-		Versions: supported20Plus,
+		Name:       "IFrameResource",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 	},
 	"Linear": {
 		Name:     "Linear",
@@ -660,8 +677,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"MediaFile": {
-		Name:     "MediaFile",
-		Versions: supported20Plus,
+		Name:       "MediaFile",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id":                  {Name: "id", Versions: supported20Plus},
 			"delivery":            {Name: "delivery", Versions: supported20Plus, Required: true},
@@ -687,8 +705,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"ClosedCaptionFile": {
-		Name:     "ClosedCaptionFile",
-		Versions: supported30Plus,
+		Name:       "ClosedCaptionFile",
+		Versions:   supported30Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"type":     {Name: "type", Versions: supported30Plus},
 			"language": {Name: "language", Versions: supported30Plus},
@@ -698,6 +717,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:               "Mezzanine",
 		Versions:           supported40Plus,
 		SupportsExtensions: true,
+		NeedsCDATA:         true,
 		Attributes: map[string]*AttributeSpec{
 			"id":                  {Name: "id", Versions: supported40Plus},
 			"delivery":            {Name: "delivery", Versions: supported40Plus, Required: true},
@@ -718,6 +738,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:               "InteractiveCreativeFile",
 		Versions:           supported30Plus,
 		SupportsExtensions: true,
+		NeedsCDATA:         true,
 		Attributes: map[string]*AttributeSpec{
 			"type":             {Name: "type", Versions: supported30Plus},
 			"apiFramework":     {Name: "apiFramework", Versions: supported30Plus},
@@ -734,15 +755,17 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"ClickThrough": {
-		Name:     "ClickThrough",
-		Versions: supported20Plus,
+		Name:       "ClickThrough",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
 	},
 	"ClickTracking": {
-		Name:     "ClickTracking",
-		Versions: supported20Plus,
+		Name:       "ClickTracking",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
@@ -762,8 +785,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"Tracking": {
-		Name:     "Tracking",
-		Versions: supported20Plus,
+		Name:       "Tracking",
+		Versions:   supported20Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"event":  {Name: "event", Versions: supported20Plus, Required: true},
 			"offset": {Name: "offset", Versions: supported30Plus},

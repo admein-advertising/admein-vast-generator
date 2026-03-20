@@ -22,6 +22,7 @@ func cloneNodeSpec(src *NodeSpec) *NodeSpec {
 		Versions:             cloneVersions(src.Versions),
 		AllowUnknownChildren: src.AllowUnknownChildren,
 		SupportsExtensions:   src.SupportsExtensions,
+		NeedsCDATA:           src.NeedsCDATA,
 	}
 	if len(src.Attributes) > 0 {
 		cloned.Attributes = make(map[string]*AttributeSpec, len(src.Attributes))
