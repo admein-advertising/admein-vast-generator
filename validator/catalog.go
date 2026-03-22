@@ -234,7 +234,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 
 			"Advertiser":         {Name: "Advertiser", Versions: supported30Plus, Optional: true},
 			"Pricing":            {Name: "Pricing", Versions: supported30Plus, Optional: true},
-			"AdServingId":        {Name: "AdServingId", Versions: supported30Plus},
+			"AdServingId":        {Name: "AdServingId", Versions: supported40Plus},
 			"Category":           {Name: "Category", Versions: supported30Plus, Optional: true, Multiple: true},
 			"ViewableImpression": {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
 			"Expires":            {Name: "Expires", Versions: supported30Plus, Optional: true},
@@ -289,7 +289,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 	},
 	"AdServingId": {
 		Name:     "AdServingId",
-		Versions: supported30Plus,
+		Versions: supported40Plus,
 	},
 	"Advertiser": {
 		Name:     "Advertiser",
