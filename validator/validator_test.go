@@ -44,6 +44,34 @@ func TestDefaultVASTCatalog_ReturnsDefensiveCopy(t *testing.T) {
 	}
 }
 
+func TestDefaultVASTCatalog_DocumentationPopulated(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	node, ok := cat.Nodes["Ad"]
+	if !ok {
+		t.Fatalf("expected Ad node in catalog")
+	}
+	if node.Documentation == nil || !strings.Contains(node.Documentation.Content, "VAST 4.2") {
+		t.Fatalf("expected Ad node documentation referencing VAST 4.2, got %+v", node.Documentation)
+	}
+	attr, ok := node.Attributes["sequence"]
+	if !ok {
+		t.Fatalf("expected sequence attribute on Ad node")
+	}
+	if attr.Documentation == nil || !strings.Contains(attr.Documentation.Content, "@sequence") {
+		t.Fatalf("expected documentation for Ad/@sequence, got %+v", attr.Documentation)
+	}
+	if attr.Value == nil || attr.Value.Documentation == nil || attr.Value.Documentation.Content == "" {
+		t.Fatalf("expected attribute value spec documentation for Ad/@sequence")
+	}
+	child, ok := node.Children["InLine"]
+	if !ok {
+		t.Fatalf("expected InLine child on Ad node")
+	}
+	if child.Documentation == nil || !strings.Contains(child.Documentation.Content, "InLine") {
+		t.Fatalf("expected documentation for Ad->InLine relationship, got %+v", child.Documentation)
+	}
+}
+
 func TestDefaultVMAPCatalog_ReturnsDefensiveCopy(t *testing.T) {
 	cat := DefaultVMAPCatalog()
 	if cat == nil {

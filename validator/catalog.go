@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/admein-advertising/admein-vast-generator/vast"
@@ -23,28 +24,37 @@ const (
 	AttributeTypeURI                AttributeType = "anyURI"
 )
 
+// Documentation captures human-readable description text along with its source reference.
+type Documentation struct {
+	Content string `json:"content,omitempty"`
+	Source  string `json:"source,omitempty"`
+}
+
 // AttributeValueSpec captures datatype and restriction metadata for an attribute value.
 type AttributeValueSpec struct {
 	Type          AttributeType
 	AllowedValues []string
 	Pattern       string
+	Documentation *Documentation
 }
 
 // AttributeSpec describes a valid attribute for a node.
 type AttributeSpec struct {
-	Name       string
-	Versions   []vast.Version
-	Required   bool
-	AllowEmpty bool
-	Value      *AttributeValueSpec
+	Name          string
+	Versions      []vast.Version
+	Required      bool
+	AllowEmpty    bool
+	Value         *AttributeValueSpec
+	Documentation *Documentation
 }
 
 // ChildSpec describes a valid child node relationship.
 type ChildSpec struct {
-	Name     string
-	Versions []vast.Version
-	Optional bool
-	Multiple bool
+	Name          string
+	Versions      []vast.Version
+	Optional      bool
+	Multiple      bool
+	Documentation *Documentation
 }
 
 // NodeSpec defines the validation metadata for a node.
@@ -57,6 +67,7 @@ type NodeSpec struct {
 	AllowUnknownAttributes bool
 	SupportsExtensions     bool
 	NeedsCDATA             bool // Node text content must be wrapped in CDATA when generating VAST.
+	Documentation          *Documentation
 }
 
 // Catalog stores node specifications keyed by node name.
@@ -188,6 +199,8 @@ var (
 		vast.Version42,
 		vast.Version43,
 	}
+
+	vast42SchemaURL = "https://raw.githubusercontent.com/InteractiveAdvertisingBureau/vast/refs/heads/master/vast_4.2.xsd"
 )
 
 // defaultCatalog contains a subset of the IAB VAST specification, focused on the
@@ -855,3 +868,68 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 }}
+
+func init() {
+	annotateCatalogDocs(defaultCatalog)
+}
+
+func docIsEmpty(doc *Documentation) bool {
+	return doc == nil || strings.TrimSpace(doc.Content) == ""
+}
+
+func annotateCatalogDocs(cat *Catalog) {
+	if cat == nil {
+		return
+	}
+	for _, node := range cat.Nodes {
+		annotateNodeDoc(node)
+	}
+}
+
+func annotateNodeDoc(node *NodeSpec) {
+	if node == nil {
+		return
+	}
+	if docIsEmpty(node.Documentation) {
+		node.Documentation = &Documentation{
+			Content: fmt.Sprintf("Defined in VAST 4.2 XSD element <%s>.", node.Name),
+			Source:  vast42SchemaURL,
+		}
+	}
+	for _, attr := range node.Attributes {
+		annotateAttributeDoc(node.Name, attr)
+	}
+	for _, child := range node.Children {
+		annotateChildDoc(node.Name, child)
+	}
+}
+
+func annotateAttributeDoc(nodeName string, attr *AttributeSpec) {
+	if attr == nil {
+		return
+	}
+	if docIsEmpty(attr.Documentation) {
+		attr.Documentation = &Documentation{
+			Content: fmt.Sprintf("Attribute @%s on <%s> per VAST 4.2 XSD.", attr.Name, nodeName),
+			Source:  vast42SchemaURL,
+		}
+	}
+	if attr.Value != nil && docIsEmpty(attr.Value.Documentation) {
+		attr.Value.Documentation = &Documentation{
+			Content: fmt.Sprintf("Constraints for @%s on <%s> defined in VAST 4.2 XSD.", attr.Name, nodeName),
+			Source:  vast42SchemaURL,
+		}
+	}
+}
+
+func annotateChildDoc(parent string, child *ChildSpec) {
+	if child == nil {
+		return
+	}
+	if docIsEmpty(child.Documentation) {
+		child.Documentation = &Documentation{
+			Content: fmt.Sprintf("Child <%s> permitted within <%s> per VAST 4.2 XSD.", child.Name, parent),
+			Source:  vast42SchemaURL,
+		}
+	}
+}

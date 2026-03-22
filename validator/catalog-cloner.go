@@ -24,6 +24,7 @@ func cloneNodeSpec(src *NodeSpec) *NodeSpec {
 		AllowUnknownAttributes: src.AllowUnknownAttributes,
 		SupportsExtensions:     src.SupportsExtensions,
 		NeedsCDATA:             src.NeedsCDATA,
+		Documentation:          cloneDocumentation(src.Documentation),
 	}
 	if len(src.Attributes) > 0 {
 		cloned.Attributes = make(map[string]*AttributeSpec, len(src.Attributes))
@@ -45,11 +46,12 @@ func cloneAttributeSpec(src *AttributeSpec) *AttributeSpec {
 		return nil
 	}
 	return &AttributeSpec{
-		Name:       src.Name,
-		Versions:   cloneVersions(src.Versions),
-		Required:   src.Required,
-		AllowEmpty: src.AllowEmpty,
-		Value:      cloneAttributeValueSpec(src.Value),
+		Name:          src.Name,
+		Versions:      cloneVersions(src.Versions),
+		Required:      src.Required,
+		AllowEmpty:    src.AllowEmpty,
+		Value:         cloneAttributeValueSpec(src.Value),
+		Documentation: cloneDocumentation(src.Documentation),
 	}
 }
 
@@ -57,7 +59,7 @@ func cloneAttributeValueSpec(src *AttributeValueSpec) *AttributeValueSpec {
 	if src == nil {
 		return nil
 	}
-	cloned := &AttributeValueSpec{Type: src.Type, Pattern: src.Pattern}
+	cloned := &AttributeValueSpec{Type: src.Type, Pattern: src.Pattern, Documentation: cloneDocumentation(src.Documentation)}
 	if len(src.AllowedValues) > 0 {
 		cloned.AllowedValues = make([]string, len(src.AllowedValues))
 		copy(cloned.AllowedValues, src.AllowedValues)
@@ -70,11 +72,20 @@ func cloneChildSpec(src *ChildSpec) *ChildSpec {
 		return nil
 	}
 	return &ChildSpec{
-		Name:     src.Name,
-		Versions: cloneVersions(src.Versions),
-		Optional: src.Optional,
-		Multiple: src.Multiple,
+		Name:          src.Name,
+		Versions:      cloneVersions(src.Versions),
+		Optional:      src.Optional,
+		Multiple:      src.Multiple,
+		Documentation: cloneDocumentation(src.Documentation),
 	}
+}
+
+func cloneDocumentation(src *Documentation) *Documentation {
+	if src == nil {
+		return nil
+	}
+	copy := *src
+	return &copy
 }
 
 func cloneVersions(src []vast.Version) []vast.Version {

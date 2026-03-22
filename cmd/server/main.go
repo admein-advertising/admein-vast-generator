@@ -21,6 +21,7 @@ func main() {
 	http.HandleFunc("/vast/example3", withCORS(vastExample3Handler))
 	http.HandleFunc("/vast/example4", withCORS(vastExample4Handler))
 	http.HandleFunc("/vast/example5", withCORS(vastExample5Handler))
+	http.HandleFunc("/catalog", withCORS(catalogHandler))
 	http.HandleFunc("/", withCORS(homeHandler))
 	fmt.Println("Server started at http://localhost:3780")
 	log.Fatal(http.ListenAndServe(":3780", nil))
@@ -345,8 +346,21 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		<li><a href='/vast/example3' target='_blank'>/vast/example3</a></li>
 		<li><a href='/vast/example4' target='_blank'>/vast/example4</a></li>
 		<li><a href='/vast/example5' target='_blank'>/vast/example5</a></li>
+		<li><a href='/catalog' target='_blank'>/catalog</a> (JSON catalog dump)</li>
 		<li><strong>POST</strong> raw XML to <code>/vast/validate</code> to receive a JSON validation report.</li>
 	</ul>`)
+}
+
+func catalogHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cat := validator.DefaultVASTCatalog()
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(cat); err != nil {
+		log.Printf("failed to encode catalog: %v", err)
+	}
 }
 
 func vastHandler(w http.ResponseWriter, r *http.Request) {
