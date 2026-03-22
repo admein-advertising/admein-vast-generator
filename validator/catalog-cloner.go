@@ -49,7 +49,20 @@ func cloneAttributeSpec(src *AttributeSpec) *AttributeSpec {
 		Versions:   cloneVersions(src.Versions),
 		Required:   src.Required,
 		AllowEmpty: src.AllowEmpty,
+		Value:      cloneAttributeValueSpec(src.Value),
 	}
+}
+
+func cloneAttributeValueSpec(src *AttributeValueSpec) *AttributeValueSpec {
+	if src == nil {
+		return nil
+	}
+	cloned := &AttributeValueSpec{Type: src.Type, Pattern: src.Pattern}
+	if len(src.AllowedValues) > 0 {
+		cloned.AllowedValues = make([]string, len(src.AllowedValues))
+		copy(cloned.AllowedValues, src.AllowedValues)
+	}
+	return cloned
 }
 
 func cloneChildSpec(src *ChildSpec) *ChildSpec {

@@ -160,6 +160,87 @@ func TestValidate_AssignsSourcePointers(t *testing.T) {
 	}
 }
 
+func TestValidate_TrackingEventEnumValidation(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<AdServingId>srv-1</AdServingId>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<AdTitle>Sample</AdTitle>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<TrackingEvents>
+							<Tracking event="invalidEvent"><![CDATA[https://example.com/track]]></Tracking>
+						</TrackingEvents>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	tracking := findNode(result.Root, "Tracking")
+	if tracking == nil {
+		t.Fatalf("expected Tracking node in result")
+	}
+	iab := tracking.Analyses[IABAnalysisCategory]
+	if iab == nil || iab.Status != StatusFail {
+		t.Fatalf("expected Tracking analysis failure, got %+v", iab)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "event must be one of") {
+		t.Fatalf("expected failure mentioning allowed values, got %s", joined)
+	}
+}
+
+func TestValidate_TrackingEventInteractiveStartAllowed(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<AdServingId>srv-1</AdServingId>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<AdTitle>Sample</AdTitle>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<TrackingEvents>
+							<Tracking event="interactiveStart"><![CDATA[https://example.com/interactive]]></Tracking>
+						</TrackingEvents>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	assertStatus(t, result.Root, "Tracking", StatusPass)
+}
+
 func TestValidate_UnknownNode(t *testing.T) {
 	resetCustom(t)
 	xml := `<VAST version="4.2"><UnknownNode /></VAST>`
@@ -179,6 +260,163 @@ func TestValidate_UnknownNode(t *testing.T) {
 	}
 	if len(analysis.Reasons) == 0 {
 		t.Fatalf("expected reason for unknown node failure")
+	}
+}
+
+func TestValidate_AttributeBooleanValidation(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<Wrapper allowMultipleAds="maybe" followAdditionalWrappers="true" fallbackOnNoAd="false">
+			<AdSystem>Example</AdSystem>
+			<VASTAdTagURI><![CDATA[https://example.com/vast.xml]]></VASTAdTagURI>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+		</Wrapper>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	wrapper := findNode(result.Root, "Wrapper")
+	if wrapper == nil {
+		t.Fatalf("expected Wrapper node in result")
+	}
+	iab := wrapper.Analyses[IABAnalysisCategory]
+	if iab == nil || iab.Status != StatusFail {
+		t.Fatalf("expected Wrapper validation failure, got %+v", iab)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "allowMultipleAds") {
+		t.Fatalf("expected failure mentioning allowMultipleAds, got %s", joined)
+	}
+}
+
+func TestValidate_AttributeEnumValidation(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<AdServingId>srv-1</AdServingId>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Pricing model="CPL" currency="US">
+				<![CDATA[1.00]]>
+			</Pricing>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+				</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	pricing := findNode(result.Root, "Pricing")
+	if pricing == nil {
+		t.Fatalf("expected Pricing node in result")
+	}
+	iab := pricing.Analyses[IABAnalysisCategory]
+	if iab == nil || iab.Status != StatusFail {
+		t.Fatalf("expected Pricing validation failure, got %+v", iab)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "model must be one of") {
+		t.Fatalf("expected enum failure for model, got %s", joined)
+	}
+	if !strings.Contains(joined, "currency must match pattern") {
+		t.Fatalf("expected pattern failure for currency, got %s", joined)
+	}
+}
+
+func TestValidate_WrapperBlockedAdCategoriesAuthority(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<Wrapper allowMultipleAds="false" followAdditionalWrappers="false" fallbackOnNoAd="true">
+			<AdSystem>Example</AdSystem>
+			<VASTAdTagURI><![CDATA[https://example.com/vast.xml]]></VASTAdTagURI>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<BlockedAdCategories authority="example.com">cat</BlockedAdCategories>
+		</Wrapper>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	blocked := findNode(result.Root, "BlockedAdCategories")
+	if blocked == nil {
+		t.Fatalf("expected BlockedAdCategories node in result")
+	}
+	iab := blocked.Analyses[IABAnalysisCategory]
+	if iab == nil || iab.Status != StatusFail {
+		t.Fatalf("expected BlockedAdCategories analysis failure, got %+v", iab)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "authority") {
+		t.Fatalf("expected failure mentioning authority, got %s", joined)
+	}
+}
+
+func TestValidate_CompanionAdsRequiredEnum(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="4.2">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<AdServingId>srv-1</AdServingId>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<AdTitle>Sample</AdTitle>
+			<Creatives>
+				<Creative id="c1">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<MediaFiles>
+							<MediaFile delivery="progressive" type="video/mp4" width="640" height="360">https://example.com/video.mp4</MediaFile>
+						</MediaFiles>
+					</Linear>
+					<CompanionAds required="sometimes">
+						<Companion width="300" height="250">
+							<StaticResource creativeType="image/png">https://example.com/companion.png</StaticResource>
+						</Companion>
+					</CompanionAds>
+				</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+	compAds := findNode(result.Root, "CompanionAds")
+	if compAds == nil {
+		t.Fatalf("expected CompanionAds node in result")
+	}
+	iab := compAds.Analyses[IABAnalysisCategory]
+	if iab == nil || iab.Status != StatusFail {
+		t.Fatalf("expected CompanionAds analysis failure, got %+v", iab)
+	}
+	joined := strings.Join(iab.Reasons, ";")
+	if !strings.Contains(joined, "must be one of") {
+		t.Fatalf("expected failure mentioning allowed values, got %s", joined)
 	}
 }
 
@@ -727,7 +965,7 @@ func TestValidate_ExtensionMezzanineBackport(t *testing.T) {
 			</Creatives>
 			<Extensions>
 				<Extension type="Mezzanine">
-					<Mezzanine delivery="streaming" type="video/mp4" width="7680" height="4320" codec="video/3gpp" fileSize="300MB" mediaType="2D">
+					<Mezzanine delivery="streaming" type="video/mp4" width="7680" height="4320" codec="video/3gpp" fileSize="300000000" mediaType="2D">
 						<![CDATA[https://creative-company.com/mezzanine.mp4]]>
 					</Mezzanine>
 				</Extension>

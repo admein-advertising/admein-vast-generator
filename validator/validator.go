@@ -331,6 +331,13 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 			markFailure(analysis, msg)
 		} else {
 			attributeResult.Value = value
+			if errs := validateAttributeValue(resolvedName, value, attrSpec); len(errs) > 0 {
+				attributeResult.Status = StatusFail
+				for _, errMsg := range errs {
+					attributeResult.addReason(errMsg)
+				}
+				markFailure(analysis, errs...)
+			}
 		}
 
 		analysis.addAttribute(attributeResult)

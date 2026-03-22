@@ -6,12 +6,37 @@ import (
 	"github.com/admein-advertising/admein-vast-generator/vast"
 )
 
+// AttributeType enumerates the primitive XML Schema datatypes we validate for catalog attributes.
+type AttributeType string
+
+const (
+	AttributeTypeString             AttributeType = "string"
+	AttributeTypeToken              AttributeType = "token"
+	AttributeTypeBoolean            AttributeType = "boolean"
+	AttributeTypeInteger            AttributeType = "integer"
+	AttributeTypeNonNegativeInteger AttributeType = "nonNegativeInteger"
+	AttributeTypePositiveInteger    AttributeType = "positiveInteger"
+	AttributeTypeFloat              AttributeType = "float"
+	AttributeTypeDuration           AttributeType = "duration"
+	AttributeTypeTimecode           AttributeType = "timecode"
+	AttributeTypeTimeOffset         AttributeType = "timeOffset"
+	AttributeTypeURI                AttributeType = "anyURI"
+)
+
+// AttributeValueSpec captures datatype and restriction metadata for an attribute value.
+type AttributeValueSpec struct {
+	Type          AttributeType
+	AllowedValues []string
+	Pattern       string
+}
+
 // AttributeSpec describes a valid attribute for a node.
 type AttributeSpec struct {
 	Name       string
 	Versions   []vast.Version
 	Required   bool
 	AllowEmpty bool
+	Value      *AttributeValueSpec
 }
 
 // ChildSpec describes a valid child node relationship.
@@ -185,9 +210,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
 			"id":            {Name: "id", Versions: supported20Plus},
-			"sequence":      {Name: "sequence", Versions: supported30Plus},
-			"conditionalAd": {Name: "conditionalAd", Versions: supported40Plus},
-			"adType":        {Name: "adType", Versions: supported41Plus},
+			"sequence":      {Name: "sequence", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"conditionalAd": {Name: "conditionalAd", Versions: supported40Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"adType":        {Name: "adType", Versions: supported41Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"video", "audio", "application", "hybrid"}}},
 		},
 		Children: map[string]*ChildSpec{
 			"InLine":  {Name: "InLine", Versions: supported20Plus, Optional: true},
@@ -209,7 +234,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 
 			"Advertiser":         {Name: "Advertiser", Versions: supported30Plus, Optional: true},
 			"Pricing":            {Name: "Pricing", Versions: supported30Plus, Optional: true},
-			"AdServingId":        {Name: "AdServingId", Versions: supported30Plus, Optional: true},
+			"AdServingId":        {Name: "AdServingId", Versions: supported30Plus},
 			"Category":           {Name: "Category", Versions: supported30Plus, Optional: true, Multiple: true},
 			"ViewableImpression": {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
 			"Expires":            {Name: "Expires", Versions: supported30Plus, Optional: true},
@@ -220,9 +245,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "Wrapper",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"followAdditionalWrappers": {Name: "followAdditionalWrappers", Versions: supported40Plus},
-			"allowMultipleAds":         {Name: "allowMultipleAds", Versions: supported40Plus},
-			"fallbackOnNoAd":           {Name: "fallbackOnNoAd", Versions: supported40Plus},
+			"followAdditionalWrappers": {Name: "followAdditionalWrappers", Versions: supported40Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"allowMultipleAds":         {Name: "allowMultipleAds", Versions: supported40Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"fallbackOnNoAd":           {Name: "fallbackOnNoAd", Versions: supported40Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
 		},
 		Children: map[string]*ChildSpec{
 			"AdSystem":     {Name: "AdSystem", Versions: supported20Plus},
@@ -232,9 +257,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"Impression":   {Name: "Impression", Versions: supported20Plus, Multiple: true},
 			"Creatives":    {Name: "Creatives", Versions: supported20Plus, Optional: true},
 
-			"Pricing":            {Name: "Pricing", Versions: supported40Plus, Optional: true},
-			"ViewableImpression": {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
-			"AdVerifications":    {Name: "AdVerifications", Versions: supported40Plus, Optional: true},
+			"Pricing":             {Name: "Pricing", Versions: supported40Plus, Optional: true},
+			"ViewableImpression":  {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
+			"AdVerifications":     {Name: "AdVerifications", Versions: supported40Plus, Optional: true},
+			"BlockedAdCategories": {Name: "BlockedAdCategories", Versions: supported30Plus, Optional: true, Multiple: true},
 		},
 	},
 	"AdSystem": {
@@ -276,14 +302,14 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "Category",
 		Versions: supported30Plus,
 		Attributes: map[string]*AttributeSpec{
-			"authority": {Name: "authority", Versions: supported30Plus, Required: true},
+			"authority": {Name: "authority", Versions: supported30Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeURI}},
 		},
 	},
 	"BlockedAdCategories": {
 		Name:     "BlockedAdCategories",
 		Versions: supported30Plus,
 		Attributes: map[string]*AttributeSpec{
-			"authority": {Name: "authority", Versions: supported30Plus},
+			"authority": {Name: "authority", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeURI}},
 		},
 	},
 	"Description": {
@@ -319,8 +345,8 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions:   supported30Plus,
 		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
-			"model":    {Name: "model", Versions: supported30Plus, Required: true},
-			"currency": {Name: "currency", Versions: supported30Plus, Required: true},
+			"model":    {Name: "model", Versions: supported30Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"CPM", "CPC", "CPV", "CPA"}}},
+			"currency": {Name: "currency", Versions: supported30Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeToken, Pattern: "^[A-Z]{3}$"}},
 		},
 	},
 	"ViewableImpression": {
@@ -423,9 +449,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "Creative",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"id":       {Name: "id", Versions: supported20Plus},
-			"sequence": {Name: "sequence", Versions: supported20Plus},
-			"AdID":     {Name: "AdID", Versions: supported20Plus},
+			"id":           {Name: "id", Versions: supported20Plus},
+			"sequence":     {Name: "sequence", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"apiFramework": {Name: "apiFramework", Versions: supported20Plus},
+			"adId":         {Name: "adId", Versions: supported20Plus},
 		},
 		Children: map[string]*ChildSpec{
 			"Linear":             {Name: "Linear", Versions: supported20Plus, Optional: true},
@@ -448,13 +475,13 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
 			"id":                   {Name: "id", Versions: supported20Plus},
-			"width":                {Name: "width", Versions: supported20Plus, Required: true},
-			"height":               {Name: "height", Versions: supported20Plus, Required: true},
-			"expandedWidth":        {Name: "expandedWidth", Versions: supported30Plus},
-			"expandedHeight":       {Name: "expandedHeight", Versions: supported30Plus},
-			"scalable":             {Name: "scalable", Versions: supported20Plus},
-			"maintainAspectRatio":  {Name: "maintainAspectRatio", Versions: supported20Plus},
-			"minSuggestedDuration": {Name: "minSuggestedDuration", Versions: supported20Plus},
+			"width":                {Name: "width", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"height":               {Name: "height", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"expandedWidth":        {Name: "expandedWidth", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"expandedHeight":       {Name: "expandedHeight", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"scalable":             {Name: "scalable", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"maintainAspectRatio":  {Name: "maintainAspectRatio", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"minSuggestedDuration": {Name: "minSuggestedDuration", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypeDuration}},
 			"apiFramework":         {Name: "apiFramework", Versions: supported20Plus},
 		},
 		Children: map[string]*ChildSpec{
@@ -483,7 +510,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "CompanionAds",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"required": {Name: "required", Versions: supported30Plus},
+			"required": {Name: "required", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"all", "any", "none"}}},
 		},
 		Children: map[string]*ChildSpec{
 			"Companion": {Name: "Companion", Versions: supported20Plus, Multiple: true},
@@ -494,20 +521,16 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
 			"id":             {Name: "id", Versions: supported20Plus},
-			"width":          {Name: "width", Versions: supported20Plus, Required: true},
-			"height":         {Name: "height", Versions: supported20Plus, Required: true},
+			"width":          {Name: "width", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"height":         {Name: "height", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
 			"apiFramework":   {Name: "apiFramework", Versions: supported20Plus},
-			"assetWidth":     {Name: "assetWidth", Versions: supported30Plus},
-			"assetHeight":    {Name: "assetHeight", Versions: supported30Plus},
-			"expandedWidth":  {Name: "expandedWidth", Versions: supported30Plus},
-			"expandedHeight": {Name: "expandedHeight", Versions: supported30Plus},
+			"assetWidth":     {Name: "assetWidth", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"assetHeight":    {Name: "assetHeight", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"expandedWidth":  {Name: "expandedWidth", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"expandedHeight": {Name: "expandedHeight", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
 			"adSlotId":       {Name: "adSlotId", Versions: supported30Plus},
-			"pxratio":        {Name: "pxratio", Versions: supported30Plus},
-			"renderingMode":  {Name: "renderingMode", Versions: supported30Plus},
-			"logoTile":       {Name: "logoTile", Versions: supported40Plus},
-			"logoTitle":      {Name: "logoTitle", Versions: supported40Plus},
-			"logoArtist":     {Name: "logoArtist", Versions: supported40Plus},
-			"logoURL":        {Name: "logoURL", Versions: supported40Plus},
+			"pxratio":        {Name: "pxratio", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeFloat}},
+			"renderingMode":  {Name: "renderingMode", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"default", "end-card", "concurrent"}}},
 		},
 		Children: map[string]*ChildSpec{
 			"StaticResource":         {Name: "StaticResource", Versions: supported20Plus, Optional: true},
@@ -530,7 +553,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "CompanionClickTracking",
 		Versions: supported30Plus,
 		Attributes: map[string]*AttributeSpec{
-			"id": {Name: "id", Versions: supported30Plus},
+			"id": {Name: "id", Versions: supported30Plus, Required: true},
 		},
 	},
 	"AltText": {
@@ -549,14 +572,14 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions: supported30Plus,
 		Attributes: map[string]*AttributeSpec{
 			"program":      {Name: "program", Versions: supported30Plus},
-			"width":        {Name: "width", Versions: supported30Plus},
-			"height":       {Name: "height", Versions: supported30Plus},
-			"xPosition":    {Name: "xPosition", Versions: supported30Plus},
-			"yPosition":    {Name: "yPosition", Versions: supported30Plus},
-			"duration":     {Name: "duration", Versions: supported30Plus},
-			"offset":       {Name: "offset", Versions: supported30Plus},
+			"width":        {Name: "width", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"height":       {Name: "height", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"xPosition":    {Name: "xPosition", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, Pattern: "([0-9]*|left|right)"}},
+			"yPosition":    {Name: "yPosition", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, Pattern: "([0-9]*|top|bottom)"}},
+			"duration":     {Name: "duration", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeDuration}},
+			"offset":       {Name: "offset", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeDuration}},
 			"apiFramework": {Name: "apiFramework", Versions: supported30Plus},
-			"pxratio":      {Name: "pxratio", Versions: supported30Plus},
+			"pxratio":      {Name: "pxratio", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeFloat}},
 		},
 		Children: map[string]*ChildSpec{
 			"StaticResource":   {Name: "StaticResource", Versions: supported30Plus, Optional: true},
@@ -597,8 +620,8 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "IconClickFallbackImage",
 		Versions: supported42Plus,
 		Attributes: map[string]*AttributeSpec{
-			"width":  {Name: "width", Versions: supported42Plus},
-			"height": {Name: "height", Versions: supported42Plus},
+			"width":  {Name: "width", Versions: supported42Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"height": {Name: "height", Versions: supported42Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
 		},
 		Children: map[string]*ChildSpec{
 			"AltText":        {Name: "AltText", Versions: supported42Plus, Optional: true},
@@ -647,7 +670,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "Linear",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"skipoffset": {Name: "skipoffset", Versions: supported30Plus},
+			"skipoffset": {Name: "skipoffset", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeTimeOffset}},
 		},
 		Children: map[string]*ChildSpec{
 			"Icons":          {Name: "Icons", Versions: supported30Plus, Optional: true},
@@ -662,7 +685,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Name:     "AdParameters",
 		Versions: supported20Plus,
 		Attributes: map[string]*AttributeSpec{
-			"xmlEncoded": {Name: "xmlEncoded", Versions: supported30Plus},
+			"xmlEncoded": {Name: "xmlEncoded", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
 		},
 		NeedsCDATA: true,
 	},
@@ -686,18 +709,18 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id":                  {Name: "id", Versions: supported20Plus},
-			"delivery":            {Name: "delivery", Versions: supported20Plus, Required: true},
+			"delivery":            {Name: "delivery", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"progressive", "streaming"}}},
 			"type":                {Name: "type", Versions: supported20Plus, Required: true},
-			"width":               {Name: "width", Versions: supported20Plus, Required: true},
-			"height":              {Name: "height", Versions: supported20Plus, Required: true},
+			"width":               {Name: "width", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"height":              {Name: "height", Versions: supported20Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
 			"codec":               {Name: "codec", Versions: supported30Plus},
-			"bitrate":             {Name: "bitrate", Versions: supported30Plus},
-			"minBitrate":          {Name: "minBitrate", Versions: supported30Plus},
-			"maxBitrate":          {Name: "maxBitrate", Versions: supported30Plus},
-			"scalable":            {Name: "scalable", Versions: supported20Plus},
-			"maintainAspectRatio": {Name: "maintainAspectRatio", Versions: supported20Plus},
-			"fileSize":            {Name: "fileSize", Versions: supported30Plus},
-			"mediaType":           {Name: "mediaType", Versions: supported30Plus},
+			"bitrate":             {Name: "bitrate", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"minBitrate":          {Name: "minBitrate", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"maxBitrate":          {Name: "maxBitrate", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"scalable":            {Name: "scalable", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"maintainAspectRatio": {Name: "maintainAspectRatio", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
+			"fileSize":            {Name: "fileSize", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"mediaType":           {Name: "mediaType", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"2D", "3D"}}},
 			"apiFramework":        {Name: "apiFramework", Versions: supported20Plus},
 		},
 	},
@@ -724,17 +747,17 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		NeedsCDATA:         true,
 		Attributes: map[string]*AttributeSpec{
 			"id":                  {Name: "id", Versions: supported40Plus},
-			"delivery":            {Name: "delivery", Versions: supported40Plus, Required: true},
+			"delivery":            {Name: "delivery", Versions: supported40Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeToken, AllowedValues: []string{"progressive", "streaming"}}},
 			"type":                {Name: "type", Versions: supported40Plus, Required: true},
 			"bitrate":             {Name: "bitrate", Versions: supported40Plus},
 			"minBitrate":          {Name: "minBitrate", Versions: supported40Plus},
 			"maxBitrate":          {Name: "maxBitrate", Versions: supported40Plus},
-			"width":               {Name: "width", Versions: supported40Plus, Required: true},
-			"height":              {Name: "height", Versions: supported40Plus, Required: true},
+			"width":               {Name: "width", Versions: supported40Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
+			"height":              {Name: "height", Versions: supported40Plus, Required: true, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
 			"scalable":            {Name: "scalable", Versions: supported40Plus},
 			"maintainAspectRatio": {Name: "maintainAspectRatio", Versions: supported40Plus},
 			"codec":               {Name: "codec", Versions: supported40Plus},
-			"fileSize":            {Name: "fileSize", Versions: supported41Plus},
+			"fileSize":            {Name: "fileSize", Versions: supported41Plus, Value: &AttributeValueSpec{Type: AttributeTypeNonNegativeInteger}},
 			"mediaType":           {Name: "mediaType", Versions: supported40Plus},
 		},
 	},
@@ -746,7 +769,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Attributes: map[string]*AttributeSpec{
 			"type":             {Name: "type", Versions: supported30Plus},
 			"apiFramework":     {Name: "apiFramework", Versions: supported30Plus},
-			"variableDuration": {Name: "variableDuration", Versions: supported30Plus},
+			"variableDuration": {Name: "variableDuration", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeBoolean}},
 		},
 	},
 	"VideoClicks": {
@@ -793,8 +816,42 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		Versions:   supported20Plus,
 		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
-			"event":  {Name: "event", Versions: supported20Plus, Required: true},
-			"offset": {Name: "offset", Versions: supported30Plus},
+			"event": {
+				Name:     "event",
+				Versions: supported20Plus,
+				Required: true,
+				Value: &AttributeValueSpec{
+					Type: AttributeTypeToken,
+					AllowedValues: []string{
+						string(vast.MuteEvent),
+						string(vast.UnmuteEvent),
+						string(vast.PauseEvent),
+						string(vast.ResumeEvent),
+						string(vast.RewindEvent),
+						string(vast.SkipEvent),
+						string(vast.PlayerExpandEvent),
+						string(vast.PlayerCollapseEvent),
+						string(vast.LoadedEvent),
+						string(vast.StartEvent),
+						string(vast.FirstQuartileEvent),
+						string(vast.MidpointEvent),
+						string(vast.ThirdQuartileEvent),
+						string(vast.CompleteEvent),
+						string(vast.ProgressEvent),
+						string(vast.CloseLinearEvent),
+						string(vast.CreativeViewEvent),
+						string(vast.AcceptInvitationEvent),
+						string(vast.AdExpandEvent),
+						string(vast.AdCollapseEvent),
+						string(vast.MinimizeEvent),
+						string(vast.CloseEvent),
+						string(vast.OverlayViewDurationEvent),
+						string(vast.OtherAdInteraction),
+						string(vast.InteractiveStart),
+					},
+				},
+			},
+			"offset": {Name: "offset", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeTimeOffset}},
 		},
 	},
 }}
