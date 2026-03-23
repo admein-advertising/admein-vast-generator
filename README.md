@@ -343,6 +343,7 @@ AdMeIn is a dedicated Video Ad testing platform made for developers and AdOps te
 - [VAST visual structure](https://admein.io/vast-tester/feature/vast-structure)
 - [VAST Summary](https://admein.io/vast-tester/feature/vast-summary)
 - [VAST Wrappers](https://admein.io/vast-tester/feature/vast-wrapper-chain)
+- [VAST Generator](https://admein.io/vast-generator)
 
 ---
 
