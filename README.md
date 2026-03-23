@@ -347,7 +347,7 @@ AdMeIn is a dedicated Video Ad testing platform made for developers and AdOps te
 
 ---
 ### Youtube channel 
-[AdMeIn on YouTube](https://youtube.com/@admein-ad-validation?si=_ubB6xC1yzuW24-C)
+[AdMeIn on YouTube](https://www.youtube.com/@AdMeIn-Ad-Validation)
 ---
 
 Made with ❤️ for the digital advertising community
