@@ -346,6 +346,9 @@ AdMeIn is a dedicated Video Ad testing platform made for developers and AdOps te
 - [VAST Generator](https://admein.io/vast-generator)
 
 ---
+### Youtube channel 
+[AdMeIn on YouTube](https://youtube.com/@admein-ad-validation?si=_ubB6xC1yzuW24-C)
+---
 
 Made with ❤️ for the digital advertising community
 Author of the AdMeIn project [@vince-scarpa](https://github.com/vince-scarpa)
