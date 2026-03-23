@@ -877,6 +877,14 @@ func docIsEmpty(doc *Documentation) bool {
 	return doc == nil || strings.TrimSpace(doc.Content) == ""
 }
 
+func schemaDocumentation(text string) *Documentation {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return nil
+	}
+	return &Documentation{Content: trimmed, Source: vast42SchemaURL}
+}
+
 func annotateCatalogDocs(cat *Catalog) {
 	if cat == nil {
 		return
@@ -889,6 +897,11 @@ func annotateCatalogDocs(cat *Catalog) {
 func annotateNodeDoc(node *NodeSpec) {
 	if node == nil {
 		return
+	}
+	if docIsEmpty(node.Documentation) {
+		if doc := schemaDocumentation(vast42ElementDocs[node.Name]); doc != nil {
+			node.Documentation = doc
+		}
 	}
 	if docIsEmpty(node.Documentation) {
 		node.Documentation = &Documentation{
@@ -909,6 +922,13 @@ func annotateAttributeDoc(nodeName string, attr *AttributeSpec) {
 		return
 	}
 	if docIsEmpty(attr.Documentation) {
+		if scoped, ok := vast42AttributeDocs[nodeName]; ok {
+			if doc := schemaDocumentation(scoped[attr.Name]); doc != nil {
+				attr.Documentation = doc
+			}
+		}
+	}
+	if docIsEmpty(attr.Documentation) {
 		attr.Documentation = &Documentation{
 			Content: fmt.Sprintf("Attribute @%s on <%s> per VAST 4.2 XSD.", attr.Name, nodeName),
 			Source:  vast42SchemaURL,
@@ -925,6 +945,11 @@ func annotateAttributeDoc(nodeName string, attr *AttributeSpec) {
 func annotateChildDoc(parent string, child *ChildSpec) {
 	if child == nil {
 		return
+	}
+	if docIsEmpty(child.Documentation) {
+		if doc := schemaDocumentation(vast42ElementDocs[child.Name]); doc != nil {
+			child.Documentation = doc
+		}
 	}
 	if docIsEmpty(child.Documentation) {
 		child.Documentation = &Documentation{

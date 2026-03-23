@@ -50,14 +50,17 @@ func TestDefaultVASTCatalog_DocumentationPopulated(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected Ad node in catalog")
 	}
-	if node.Documentation == nil || !strings.Contains(node.Documentation.Content, "VAST 4.2") {
-		t.Fatalf("expected Ad node documentation referencing VAST 4.2, got %+v", node.Documentation)
+	if node.Documentation == nil || node.Documentation.Content == "" {
+		t.Fatalf("expected Ad node documentation with content, got %+v", node.Documentation)
+	}
+	if node.Documentation.Source != vast42SchemaURL {
+		t.Fatalf("expected Ad node documentation source %s, got %+v", vast42SchemaURL, node.Documentation)
 	}
 	attr, ok := node.Attributes["sequence"]
 	if !ok {
 		t.Fatalf("expected sequence attribute on Ad node")
 	}
-	if attr.Documentation == nil || !strings.Contains(attr.Documentation.Content, "@sequence") {
+	if attr.Documentation == nil || !strings.Contains(strings.ToLower(attr.Documentation.Content), "sequence") {
 		t.Fatalf("expected documentation for Ad/@sequence, got %+v", attr.Documentation)
 	}
 	if attr.Value == nil || attr.Value.Documentation == nil || attr.Value.Documentation.Content == "" {
@@ -67,7 +70,7 @@ func TestDefaultVASTCatalog_DocumentationPopulated(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected InLine child on Ad node")
 	}
-	if child.Documentation == nil || !strings.Contains(child.Documentation.Content, "InLine") {
+	if child.Documentation == nil || child.Documentation.Content == "" {
 		t.Fatalf("expected documentation for Ad->InLine relationship, got %+v", child.Documentation)
 	}
 }
