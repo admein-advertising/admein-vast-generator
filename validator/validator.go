@@ -234,7 +234,22 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 	for _, child := range node.Children {
 		childName := child.localName()
 		childOccurrences[childName]++
-		childSpec, _ := cfg.catalog.node(childName)
+		childLookupName := childName
+		if spec != nil {
+			if parentChild, ok := spec.child(childName); ok {
+				if parentChild.NodeOverride != "" {
+					childLookupName = parentChild.NodeOverride
+				}
+			} else if parentChild, _, ok := spec.childCaseInsensitive(childName); ok {
+				if parentChild.NodeOverride != "" {
+					childLookupName = parentChild.NodeOverride
+				}
+			}
+		}
+		childSpec, _ := cfg.catalog.node(childLookupName)
+		if childSpec == nil && childLookupName != childName {
+			childSpec, _ = cfg.catalog.node(childName)
+		}
 		childPointer := buildSourcePointer(sourcePointer, childName, childOccurrences[childName])
 		childResult := validateNodeRecursive(child, version, cfg, childSpec, spec, childAllowsUnknown, childPointer)
 		result.Children = append(result.Children, childResult)

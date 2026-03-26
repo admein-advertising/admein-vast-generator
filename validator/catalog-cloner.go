@@ -76,6 +76,7 @@ func cloneChildSpec(src *ChildSpec) *ChildSpec {
 		Versions:      cloneVersions(src.Versions),
 		Optional:      src.Optional,
 		Multiple:      src.Multiple,
+		NodeOverride:  src.NodeOverride,
 		Documentation: cloneDocumentation(src.Documentation),
 	}
 }

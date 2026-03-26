@@ -75,6 +75,63 @@ func TestDefaultVASTCatalog_DocumentationPopulated(t *testing.T) {
 	}
 }
 
+func TestDefaultVASTCatalog_WrapperLinearOverrides(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	wrapper, ok := cat.Nodes["Wrapper"]
+	if !ok {
+		t.Fatalf("expected Wrapper node")
+	}
+	creativesChild, ok := wrapper.Children["Creatives"]
+	if !ok {
+		t.Fatalf("expected Creatives child on Wrapper")
+	}
+	if creativesChild.NodeOverride != "WrapperCreatives" {
+		t.Fatalf("expected Wrapper Creatives override, got %q", creativesChild.NodeOverride)
+	}
+	wrapperCreatives, ok := cat.Nodes["WrapperCreatives"]
+	if !ok {
+		t.Fatalf("expected WrapperCreatives spec")
+	}
+	creativeChild, ok := wrapperCreatives.Children["Creative"]
+	if !ok {
+		t.Fatalf("expected Creative child on WrapperCreatives")
+	}
+	if creativeChild.NodeOverride != "WrapperCreative" {
+		t.Fatalf("expected WrapperCreative override, got %q", creativeChild.NodeOverride)
+	}
+	wrapperCreative, ok := cat.Nodes["WrapperCreative"]
+	if !ok {
+		t.Fatalf("expected WrapperCreative spec")
+	}
+	linearChild, ok := wrapperCreative.Children["Linear"]
+	if !ok {
+		t.Fatalf("expected Linear child on WrapperCreative")
+	}
+	if linearChild.NodeOverride != "WrapperLinear" {
+		t.Fatalf("expected WrapperLinear override, got %q", linearChild.NodeOverride)
+	}
+	wrapperLinear, ok := cat.Nodes["WrapperLinear"]
+	if !ok {
+		t.Fatalf("expected WrapperLinear spec")
+	}
+	if child, ok := wrapperLinear.Children["Duration"]; !ok || !child.Optional {
+		t.Fatalf("expected Wrapper Linear duration to be optional")
+	}
+	if child, ok := wrapperLinear.Children["MediaFiles"]; !ok || !child.Optional {
+		t.Fatalf("expected Wrapper Linear media files to be optional")
+	}
+	linear, ok := cat.Nodes["Linear"]
+	if !ok {
+		t.Fatalf("expected base Linear spec")
+	}
+	if child := linear.Children["Duration"]; child == nil || child.Optional {
+		t.Fatalf("expected base Linear duration to remain required")
+	}
+	if child := linear.Children["MediaFiles"]; child == nil || child.Optional {
+		t.Fatalf("expected base Linear media files to remain required")
+	}
+}
+
 func TestDefaultVMAPCatalog_ReturnsDefensiveCopy(t *testing.T) {
 	cat := DefaultVMAPCatalog()
 	if cat == nil {

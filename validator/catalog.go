@@ -54,6 +54,7 @@ type ChildSpec struct {
 	Versions      []vast.Version
 	Optional      bool
 	Multiple      bool
+	NodeOverride  string // Optional catalog node key to use instead of the child's XML name.
 	Documentation *Documentation
 }
 
@@ -268,7 +269,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"Extensions":   {Name: "Extensions", Versions: supported20Plus, Optional: true, Multiple: true},
 			"Error":        {Name: "Error", Versions: supported20Plus, Optional: true, Multiple: true},
 			"Impression":   {Name: "Impression", Versions: supported20Plus, Multiple: true},
-			"Creatives":    {Name: "Creatives", Versions: supported20Plus, Optional: true},
+			"Creatives":    {Name: "Creatives", Versions: supported20Plus, Optional: true, NodeOverride: "WrapperCreatives"},
 
 			"Pricing":             {Name: "Pricing", Versions: supported40Plus, Optional: true},
 			"ViewableImpression":  {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
@@ -458,6 +459,13 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"Creative": {Name: "Creative", Versions: supported20Plus, Multiple: true},
 		},
 	},
+	"WrapperCreatives": {
+		Name:     "Creatives",
+		Versions: supported20Plus,
+		Children: map[string]*ChildSpec{
+			"Creative": {Name: "Creative", Versions: supported20Plus, Multiple: true, NodeOverride: "WrapperCreative"},
+		},
+	},
 	"Creative": {
 		Name:     "Creative",
 		Versions: supported20Plus,
@@ -469,6 +477,23 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 		Children: map[string]*ChildSpec{
 			"Linear":             {Name: "Linear", Versions: supported20Plus, Optional: true},
+			"NonLinearAds":       {Name: "NonLinearAds", Versions: supported20Plus, Optional: true},
+			"CompanionAds":       {Name: "CompanionAds", Versions: supported20Plus, Optional: true},
+			"CreativeExtensions": {Name: "CreativeExtensions", Versions: supported30Plus, Optional: true, Multiple: true},
+			"UniversalAdId":      {Name: "UniversalAdId", Versions: supported40Plus, Optional: true, Multiple: true},
+		},
+	},
+	"WrapperCreative": {
+		Name:     "Creative",
+		Versions: supported20Plus,
+		Attributes: map[string]*AttributeSpec{
+			"id":           {Name: "id", Versions: supported20Plus},
+			"sequence":     {Name: "sequence", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
+			"apiFramework": {Name: "apiFramework", Versions: supported20Plus},
+			"adId":         {Name: "adId", Versions: supported20Plus},
+		},
+		Children: map[string]*ChildSpec{
+			"Linear":             {Name: "Linear", Versions: supported20Plus, Optional: true, NodeOverride: "WrapperLinear"},
 			"NonLinearAds":       {Name: "NonLinearAds", Versions: supported20Plus, Optional: true},
 			"CompanionAds":       {Name: "CompanionAds", Versions: supported20Plus, Optional: true},
 			"CreativeExtensions": {Name: "CreativeExtensions", Versions: supported30Plus, Optional: true, Multiple: true},
@@ -690,6 +715,21 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"AdParameters":   {Name: "AdParameters", Versions: supported20Plus, Optional: true},
 			"Duration":       {Name: "Duration", Versions: supported20Plus},
 			"MediaFiles":     {Name: "MediaFiles", Versions: supported20Plus},
+			"VideoClicks":    {Name: "VideoClicks", Versions: supported20Plus, Optional: true},
+			"TrackingEvents": {Name: "TrackingEvents", Versions: supported20Plus, Optional: true},
+		},
+	},
+	"WrapperLinear": {
+		Name:     "Linear",
+		Versions: supported20Plus,
+		Attributes: map[string]*AttributeSpec{
+			"skipoffset": {Name: "skipoffset", Versions: supported30Plus, Value: &AttributeValueSpec{Type: AttributeTypeTimeOffset}},
+		},
+		Children: map[string]*ChildSpec{
+			"Icons":          {Name: "Icons", Versions: supported30Plus, Optional: true},
+			"AdParameters":   {Name: "AdParameters", Versions: supported20Plus, Optional: true},
+			"Duration":       {Name: "Duration", Versions: supported20Plus, Optional: true},
+			"MediaFiles":     {Name: "MediaFiles", Versions: supported20Plus, Optional: true},
 			"VideoClicks":    {Name: "VideoClicks", Versions: supported20Plus, Optional: true},
 			"TrackingEvents": {Name: "TrackingEvents", Versions: supported20Plus, Optional: true},
 		},
