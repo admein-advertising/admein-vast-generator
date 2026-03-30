@@ -47,6 +47,7 @@ type AttributeResult struct {
 	Name           string         `json:"name"`
 	Value          string         `json:"value,omitempty"`
 	IntroducedAt   *float64       `json:"introducedAt"`
+	AllowedValues  []string       `json:"allowedValues,omitempty"`
 	VersionSupport []vast.Version `json:"versionSupport,omitempty"`
 	Status         ResultStatus   `json:"status"`
 	Reasons        []string       `json:"reason,omitempty"`

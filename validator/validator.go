@@ -323,6 +323,7 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		}
 		attributeResult.VersionSupport = attrSpec.Versions
 		attributeResult.IntroducedAt = introducedAtFromVersions(attrSpec.Versions)
+		attributeResult.AllowedValues = copyAllowedValues(attrSpec)
 
 		if caseMismatchName != "" && caseMismatchName != attrName {
 			attributeResult.Status = StatusFail
@@ -373,6 +374,7 @@ func validateAttributes(node *genericNode, version vast.Version, spec *NodeSpec,
 		analysis.addAttribute(AttributeResult{
 			Name:           attrSpec.Name,
 			IntroducedAt:   introducedAtFromVersions(attrSpec.Versions),
+			AllowedValues:  copyAllowedValues(attrSpec),
 			VersionSupport: attrSpec.Versions,
 			Status:         StatusFail,
 			Reasons:        []string{msg},
@@ -391,6 +393,16 @@ func isExtensionContainerSpec(spec *NodeSpec) bool {
 	default:
 		return false
 	}
+}
+
+func copyAllowedValues(attrSpec *AttributeSpec) []string {
+	if attrSpec == nil || attrSpec.Value == nil {
+		return nil
+	}
+	if len(attrSpec.Value.AllowedValues) == 0 {
+		return nil
+	}
+	return append([]string(nil), attrSpec.Value.AllowedValues...)
 }
 
 func introducedAtFromVersions(versions []vast.Version) *float64 {
