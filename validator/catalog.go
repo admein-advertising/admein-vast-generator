@@ -473,7 +473,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"id":           {Name: "id", Versions: supported20Plus},
 			"sequence":     {Name: "sequence", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
 			"apiFramework": {Name: "apiFramework", Versions: supported20Plus},
-			"adId":         {Name: "adId", Versions: supported20Plus},
+			"AdID":         {Name: "AdID", Versions: supported20Plus},
 		},
 		Children: map[string]*ChildSpec{
 			"Linear":             {Name: "Linear", Versions: supported20Plus, Optional: true},
@@ -490,7 +490,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 			"id":           {Name: "id", Versions: supported20Plus},
 			"sequence":     {Name: "sequence", Versions: supported20Plus, Value: &AttributeValueSpec{Type: AttributeTypePositiveInteger}},
 			"apiFramework": {Name: "apiFramework", Versions: supported20Plus},
-			"adId":         {Name: "adId", Versions: supported20Plus},
+			"AdID":         {Name: "AdID", Versions: supported20Plus},
 		},
 		Children: map[string]*ChildSpec{
 			"Linear":             {Name: "Linear", Versions: supported20Plus, Optional: true, NodeOverride: "WrapperLinear"},
