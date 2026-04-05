@@ -444,8 +444,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"VerificationParameters": {
-		Name:     "VerificationParameters",
-		Versions: supported40Plus,
+		Name:       "VerificationParameters",
+		Versions:   supported40Plus,
+		NeedsCDATA: true,
 	},
 	"VASTAdTagURI": {
 		Name:       "VASTAdTagURI",
