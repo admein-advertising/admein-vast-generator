@@ -29,7 +29,7 @@ const (
 	CompleteEvent            TrackingEvent = "complete"
 	ProgressEvent            TrackingEvent = "progress"
 	CloseLinearEvent         TrackingEvent = "closeLinear"
-	CreativeViewEvent        TrackingEvent = "creativeView"
+	CreativeView             TrackingEvent = "creativeView"
 	AcceptInvitationEvent    TrackingEvent = "acceptInvitation"
 	AdExpandEvent            TrackingEvent = "adExpand"
 	AdCollapseEvent          TrackingEvent = "adCollapse"
@@ -38,6 +38,7 @@ const (
 	OverlayViewDurationEvent TrackingEvent = "overlayViewDuration"
 	OtherAdInteraction       TrackingEvent = "otherAdInteraction"
 	InteractiveStart         TrackingEvent = "interactiveStart"
+	FullscreenEvent          TrackingEvent = "fullscreen"
 )
 
 // TrackingEvents contains a collection of tracking URLs for ad measurement.
