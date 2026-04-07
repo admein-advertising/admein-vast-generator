@@ -20,12 +20,13 @@ type complexTypeInfo struct {
 }
 
 type elementInfo struct {
-	doc        string
-	typeName   string
-	inlineType *complexTypeInfo
+	doc         string
+	typeNames   []string
+	inlineTypes []complexTypeInfo
 }
 
 func main() {
+	// Run from repo root: go run ./cmd/vastdocgen -schema schemas/vast_4.2.xsd -out validator/vast42_docs_gen.go
 	schemaPath := flag.String("schema", "schemas/vast_4.2.xsd", "path to VAST 4.2 schema")
 	outPath := flag.String("out", "validator/vast42_docs_gen.go", "output file for generated docs")
 	flag.Parse()
@@ -69,21 +70,26 @@ func generate(schemaPath string) ([]byte, error) {
 
 	for name, info := range elements {
 		desc := strings.TrimSpace(info.doc)
-		if desc == "" && info.inlineType != nil {
-			desc = strings.TrimSpace(info.inlineType.doc)
+		if desc == "" && len(info.inlineTypes) > 0 {
+			desc = strings.TrimSpace(info.inlineTypes[0].doc)
 		}
 		if desc == "" {
-			desc = typeDoc(info.typeName, complexTypes)
+			for _, typeName := range info.typeNames {
+				desc = typeDoc(typeName, complexTypes)
+				if desc != "" {
+					break
+				}
+			}
 		}
 		if desc != "" {
 			nodeDocs[name] = desc
 		}
 		resolved := map[string]string{}
-		if info.typeName != "" {
-			mergeAttrs(resolved, resolveTypeAttrs(info.typeName, complexTypes, memo))
+		for _, typeName := range info.typeNames {
+			mergeAttrs(resolved, resolveTypeAttrs(typeName, complexTypes, memo))
 		}
-		if info.inlineType != nil {
-			mergeAttrs(resolved, resolveInlineAttrs(info.inlineType, complexTypes, memo))
+		for i := range info.inlineTypes {
+			mergeAttrs(resolved, resolveInlineAttrs(&info.inlineTypes[i], complexTypes, memo))
 		}
 		if len(resolved) > 0 {
 			attrDocs[name] = resolved
@@ -148,20 +154,20 @@ func collectElements(node *etree.Element, out map[string]*elementInfo) {
 			if name != "" {
 				info := out[name]
 				if info == nil {
-					info = &elementInfo{}
+					info = &elementInfo{typeNames: []string{}}
 					out[name] = info
 				}
-				if info.doc == "" {
-					info.doc = docText(child)
+				doc := docText(child)
+				if info.doc == "" && doc != "" {
+					info.doc = doc
 				}
-				if info.typeName == "" {
-					info.typeName = stripPrefix(child.SelectAttrValue("type", ""))
+				typeName := stripPrefix(child.SelectAttrValue("type", ""))
+				if typeName != "" && !contains(info.typeNames, typeName) {
+					info.typeNames = append(info.typeNames, typeName)
 				}
-				if info.inlineType == nil {
-					if ct := child.FindElement("complexType"); ct != nil {
-						parsed := parseComplexType(ct)
-						info.inlineType = &parsed
-					}
+				if ct := child.FindElement("complexType"); ct != nil {
+					parsed := parseComplexType(ct)
+					info.inlineTypes = append(info.inlineTypes, parsed)
 				}
 			}
 			collectElements(child, out)
@@ -169,6 +175,15 @@ func collectElements(node *etree.Element, out map[string]*elementInfo) {
 		}
 		collectElements(child, out)
 	}
+}
+
+func contains(list []string, needle string) bool {
+	for _, value := range list {
+		if value == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func docText(el *etree.Element) string {
