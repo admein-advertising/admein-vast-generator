@@ -935,6 +935,9 @@ func annotateCatalogDocs(cat *Catalog) {
 	for _, node := range cat.Nodes {
 		annotateNodeDoc(node)
 	}
+	for _, node := range cat.Nodes {
+		annotateChildDocs(cat, node)
+	}
 }
 
 func annotateNodeDoc(node *NodeSpec) {
@@ -955,8 +958,14 @@ func annotateNodeDoc(node *NodeSpec) {
 	for _, attr := range node.Attributes {
 		annotateAttributeDoc(node.Name, attr)
 	}
+}
+
+func annotateChildDocs(cat *Catalog, node *NodeSpec) {
+	if node == nil {
+		return
+	}
 	for _, child := range node.Children {
-		annotateChildDoc(node.Name, child)
+		annotateChildDoc(cat, node.Name, child)
 	}
 }
 
@@ -985,13 +994,22 @@ func annotateAttributeDoc(nodeName string, attr *AttributeSpec) {
 	}
 }
 
-func annotateChildDoc(parent string, child *ChildSpec) {
+func annotateChildDoc(cat *Catalog, parent string, child *ChildSpec) {
 	if child == nil {
 		return
 	}
 	if docIsEmpty(child.Documentation) {
 		if doc := schemaDocumentation(vast42ElementDocs[child.Name]); doc != nil {
 			child.Documentation = doc
+		}
+	}
+	if docIsEmpty(child.Documentation) && cat != nil {
+		lookupName := child.Name
+		if child.NodeOverride != "" {
+			lookupName = child.NodeOverride
+		}
+		if target, ok := cat.node(lookupName); ok && target != nil && !docIsEmpty(target.Documentation) {
+			child.Documentation = cloneDocumentation(target.Documentation)
 		}
 	}
 	if docIsEmpty(child.Documentation) {

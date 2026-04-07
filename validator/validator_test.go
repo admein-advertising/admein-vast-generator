@@ -75,6 +75,27 @@ func TestDefaultVASTCatalog_DocumentationPopulated(t *testing.T) {
 	}
 }
 
+func TestDefaultVASTCatalog_ChildDocumentationInheritsNodeDocumentation(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	linear, ok := cat.Nodes["Linear"]
+	if !ok {
+		t.Fatalf("expected Linear node in catalog")
+	}
+	videoClicks, ok := linear.Children["VideoClicks"]
+	if !ok {
+		t.Fatalf("expected VideoClicks child on Linear")
+	}
+	if videoClicks.Documentation == nil || strings.TrimSpace(videoClicks.Documentation.Content) == "" {
+		t.Fatalf("expected documentation for Linear->VideoClicks, got %+v", videoClicks.Documentation)
+	}
+	if strings.Contains(videoClicks.Documentation.Content, "Child <VideoClicks> permitted within <Linear>") {
+		t.Fatalf("expected inherited node documentation for Linear->VideoClicks, got generic fallback: %+v", videoClicks.Documentation)
+	}
+	if videoClicks.Documentation.Source != vast42SchemaURL {
+		t.Fatalf("expected VideoClicks child documentation source %s, got %+v", vast42SchemaURL, videoClicks.Documentation)
+	}
+}
+
 func TestDefaultVASTCatalog_WrapperLinearOverrides(t *testing.T) {
 	cat := DefaultVASTCatalog()
 	wrapper, ok := cat.Nodes["Wrapper"]

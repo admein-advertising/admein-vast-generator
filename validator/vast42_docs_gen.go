@@ -190,7 +190,7 @@ var vast42AttributeDocs = map[string]map[string]string{
 		"type": "MIME type of the resource being served",
 	},
 	"Tracking": {
-		"event":  "A string that defines the event being tracked. One event type is currently supported: verificationNotExecuted: the player did not or was not able to execute the provided verification code.",
+		"event":  "The name of the event to track. For nonlinear ads these events should be recorded on the video within the ad.",
 		"offset": "The time during the video at which this url should be pinged. Must be present for progress event.",
 	},
 	"VAST": {
