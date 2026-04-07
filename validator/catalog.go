@@ -852,8 +852,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"CustomClick": {
-		Name:     "CustomClick",
-		Versions: supported30Plus,
+		Name:       "CustomClick",
+		Versions:   supported30Plus,
+		NeedsCDATA: true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
