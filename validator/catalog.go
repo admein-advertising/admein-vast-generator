@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/admein-advertising/admein-vast-generator/vast"
@@ -54,7 +53,7 @@ type ChildSpec struct {
 	Versions      []vast.Version
 	Optional      bool
 	Multiple      bool
-	NodeOverride  string // Optional catalog node key to use instead of the child's XML name.
+	NodeOverride  string `json:",omitempty"` // Optional catalog node key to use instead of the child's XML name.
 	Documentation *Documentation
 }
 
@@ -79,7 +78,9 @@ type Catalog struct {
 // DefaultVASTCatalog returns a defensive copy of the built-in VAST catalog so
 // callers can inspect or serialize it without mutating validator defaults.
 func DefaultVASTCatalog() *Catalog {
-	return cloneCatalog(defaultCatalog)
+	cloned := cloneCatalog(defaultCatalog)
+	annotateCatalogDocs(cloned)
+	return cloned
 }
 
 func (c *Catalog) node(name string) (*NodeSpec, bool) {
@@ -914,108 +915,4 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 
 func init() {
 	annotateCatalogDocs(defaultCatalog)
-}
-
-func docIsEmpty(doc *Documentation) bool {
-	return doc == nil || strings.TrimSpace(doc.Content) == ""
-}
-
-func schemaDocumentation(text string) *Documentation {
-	trimmed := strings.TrimSpace(text)
-	if trimmed == "" {
-		return nil
-	}
-	return &Documentation{Content: trimmed, Source: vast42SchemaURL}
-}
-
-func annotateCatalogDocs(cat *Catalog) {
-	if cat == nil {
-		return
-	}
-	for _, node := range cat.Nodes {
-		annotateNodeDoc(node)
-	}
-	for _, node := range cat.Nodes {
-		annotateChildDocs(cat, node)
-	}
-}
-
-func annotateNodeDoc(node *NodeSpec) {
-	if node == nil {
-		return
-	}
-	if docIsEmpty(node.Documentation) {
-		if doc := schemaDocumentation(vast42ElementDocs[node.Name]); doc != nil {
-			node.Documentation = doc
-		}
-	}
-	if docIsEmpty(node.Documentation) {
-		node.Documentation = &Documentation{
-			Content: fmt.Sprintf("Defined in VAST 4.2 XSD element <%s>.", node.Name),
-			Source:  vast42SchemaURL,
-		}
-	}
-	for _, attr := range node.Attributes {
-		annotateAttributeDoc(node.Name, attr)
-	}
-}
-
-func annotateChildDocs(cat *Catalog, node *NodeSpec) {
-	if node == nil {
-		return
-	}
-	for _, child := range node.Children {
-		annotateChildDoc(cat, node.Name, child)
-	}
-}
-
-func annotateAttributeDoc(nodeName string, attr *AttributeSpec) {
-	if attr == nil {
-		return
-	}
-	if docIsEmpty(attr.Documentation) {
-		if scoped, ok := vast42AttributeDocs[nodeName]; ok {
-			if doc := schemaDocumentation(scoped[attr.Name]); doc != nil {
-				attr.Documentation = doc
-			}
-		}
-	}
-	if docIsEmpty(attr.Documentation) {
-		attr.Documentation = &Documentation{
-			Content: fmt.Sprintf("Attribute @%s on <%s> per VAST 4.2 XSD.", attr.Name, nodeName),
-			Source:  vast42SchemaURL,
-		}
-	}
-	if attr.Value != nil && docIsEmpty(attr.Value.Documentation) {
-		attr.Value.Documentation = &Documentation{
-			Content: fmt.Sprintf("Constraints for @%s on <%s> defined in VAST 4.2 XSD.", attr.Name, nodeName),
-			Source:  vast42SchemaURL,
-		}
-	}
-}
-
-func annotateChildDoc(cat *Catalog, parent string, child *ChildSpec) {
-	if child == nil {
-		return
-	}
-	if docIsEmpty(child.Documentation) {
-		if doc := schemaDocumentation(vast42ElementDocs[child.Name]); doc != nil {
-			child.Documentation = doc
-		}
-	}
-	if docIsEmpty(child.Documentation) && cat != nil {
-		lookupName := child.Name
-		if child.NodeOverride != "" {
-			lookupName = child.NodeOverride
-		}
-		if target, ok := cat.node(lookupName); ok && target != nil && !docIsEmpty(target.Documentation) {
-			child.Documentation = cloneDocumentation(target.Documentation)
-		}
-	}
-	if docIsEmpty(child.Documentation) {
-		child.Documentation = &Documentation{
-			Content: fmt.Sprintf("Child <%s> permitted within <%s> per VAST 4.2 XSD.", child.Name, parent),
-			Source:  vast42SchemaURL,
-		}
-	}
 }

@@ -9,6 +9,29 @@ import (
 	"testing"
 )
 
+func followCatalogPath(t *testing.T, cat *Catalog, start string, path ...string) *NodeSpec {
+	t.Helper()
+	node, ok := cat.Nodes[start]
+	if !ok || node == nil {
+		t.Fatalf("expected node %q in catalog", start)
+	}
+	for _, childName := range path {
+		child, ok := node.Children[childName]
+		if !ok || child == nil {
+			t.Fatalf("expected child %q on node %q", childName, node.Name)
+		}
+		targetKey := child.Name
+		if child.NodeOverride != "" {
+			targetKey = child.NodeOverride
+		}
+		node, ok = cat.Nodes[targetKey]
+		if !ok || node == nil {
+			t.Fatalf("expected target node %q for child %q", targetKey, childName)
+		}
+	}
+	return node
+}
+
 func TestDefaultVASTCatalog_ReturnsDefensiveCopy(t *testing.T) {
 	cat := DefaultVASTCatalog()
 	if cat == nil {
@@ -88,11 +111,93 @@ func TestDefaultVASTCatalog_ChildDocumentationInheritsNodeDocumentation(t *testi
 	if videoClicks.Documentation == nil || strings.TrimSpace(videoClicks.Documentation.Content) == "" {
 		t.Fatalf("expected documentation for Linear->VideoClicks, got %+v", videoClicks.Documentation)
 	}
-	if strings.Contains(videoClicks.Documentation.Content, "Child <VideoClicks> permitted within <Linear>") {
-		t.Fatalf("expected inherited node documentation for Linear->VideoClicks, got generic fallback: %+v", videoClicks.Documentation)
+	if strings.Contains(videoClicks.Documentation.Content, "For Companions creativeView is the only supported event") {
+		t.Fatalf("expected context-safe documentation for Linear->VideoClicks, got misattributed text: %+v", videoClicks.Documentation)
 	}
 	if videoClicks.Documentation.Source != vast42SchemaURL {
 		t.Fatalf("expected VideoClicks child documentation source %s, got %+v", vast42SchemaURL, videoClicks.Documentation)
+	}
+}
+
+func TestDefaultVASTCatalog_TrackingEventsDocsAreNotMisattributed(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	node, ok := cat.Nodes["TrackingEvents"]
+	if !ok || node == nil || node.Documentation == nil {
+		t.Fatalf("expected TrackingEvents node documentation")
+	}
+	if strings.Contains(node.Documentation.Content, "For Companions creativeView is the only supported event") {
+		t.Fatalf("TrackingEvents node should not be companion-specific: %+v", node.Documentation)
+	}
+
+	linear, ok := cat.Nodes["Linear"]
+	if !ok {
+		t.Fatalf("expected Linear node in catalog")
+	}
+	child, ok := linear.Children["TrackingEvents"]
+	if !ok {
+		t.Fatalf("expected TrackingEvents child on Linear")
+	}
+	if child.Documentation == nil || strings.TrimSpace(child.Documentation.Content) == "" {
+		t.Fatalf("expected documentation for Linear->TrackingEvents")
+	}
+	if strings.Contains(child.Documentation.Content, "For Companions creativeView is the only supported event") {
+		t.Fatalf("Linear->TrackingEvents should not inherit Companion-specific documentation: %+v", child.Documentation)
+	}
+}
+
+func TestVAST42ContextElementDocs_TracksLinearPath(t *testing.T) {
+	const path = "VAST>Ad>InLine>Creatives>Creative>Linear>TrackingEvents"
+	if _, ok := vast42ContextElementDocs[path]; !ok {
+		t.Fatalf("expected generated context docs to include %q", path)
+	}
+}
+
+func TestDefaultVASTCatalog_CompanionTrackingEventsUsesContextualNode(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	companionNode := followCatalogPath(t, cat, "VAST", "Ad", "InLine", "Creatives", "Creative", "CompanionAds", "Companion")
+	child, ok := companionNode.Children["TrackingEvents"]
+	if !ok {
+		t.Fatalf("expected TrackingEvents child on contextual Companion node")
+	}
+	if child.Documentation == nil || !strings.Contains(child.Documentation.Content, "For Companions creativeView is the only supported event") {
+		t.Fatalf("expected Companion TrackingEvents child documentation to remain companion-specific, got %+v", child.Documentation)
+	}
+}
+
+func TestDefaultVASTCatalog_PromotesUnambiguousContextNodeDocs(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	node, ok := cat.Nodes["AdVerifications"]
+	if !ok || node == nil {
+		t.Fatalf("expected AdVerifications node in catalog")
+	}
+	if node.Documentation == nil || strings.TrimSpace(node.Documentation.Content) == "" {
+		t.Fatalf("expected documentation for AdVerifications node")
+	}
+	if strings.Contains(node.Documentation.Content, "Defined in VAST 4.2 XSD element <AdVerifications>") {
+		t.Fatalf("expected contextual node documentation to replace generic fallback, got %+v", node.Documentation)
+	}
+	if !strings.Contains(node.Documentation.Content, "AdVerification element") {
+		t.Fatalf("expected specific AdVerifications documentation, got %+v", node.Documentation)
+	}
+}
+
+func TestDefaultVASTCatalog_VerificationTrackingUsesContextualAttributes(t *testing.T) {
+	cat := DefaultVASTCatalog()
+	verificationNode := followCatalogPath(t, cat, "VAST", "Ad", "InLine", "AdVerifications", "Verification")
+	trackingEventsChild, ok := verificationNode.Children["TrackingEvents"]
+	if !ok {
+		t.Fatalf("expected TrackingEvents child on contextual Verification node")
+	}
+	if trackingEventsChild.Documentation == nil || !strings.Contains(strings.ToLower(trackingEventsChild.Documentation.Content), "trackingevents") {
+		t.Fatalf("expected Verification->TrackingEvents child documentation, got %+v", trackingEventsChild.Documentation)
+	}
+
+	trackingNode, ok := cat.Nodes["Tracking"]
+	if !ok || trackingNode == nil {
+		t.Fatalf("expected base Tracking node in catalog")
+	}
+	if trackingNode.Attributes["offset"] == nil {
+		t.Fatalf("expected base Tracking node to retain offset attribute")
 	}
 }
 
