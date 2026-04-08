@@ -255,7 +255,7 @@ func annotateChildDoc(cat *Catalog, parent string, child *ChildSpec, contextPath
 }
 
 // promoteContextualAttributeDocs promotes context-specific documentation for attributes that currently
-// only have generic XSD fallback text, if an unambiguous context-specific doc exists.
+// only have generic XSD fallback text, selecting the most common context-specific doc.
 func promoteContextualAttributeDocs(cat *Catalog) {
 	if cat == nil {
 		return
@@ -271,15 +271,22 @@ func promoteContextualAttributeDocs(cat *Catalog) {
 			if !ok || attr == nil || !isGenericAttributeFallbackDoc(attr.Documentation) {
 				continue
 			}
-			candidate, ok := selectUnambiguousDoc(docs)
-			if !ok {
+			// Pick the doc that appears most frequently across contexts (or first if tied)
+			if len(docs) == 0 {
 				continue
 			}
-			if docs[candidate] < 2 {
-				continue
+			var bestDoc string
+			var bestCount int
+			for docText, count := range docs {
+				if count > bestCount {
+					bestDoc = docText
+					bestCount = count
+				}
 			}
-			if doc := schemaDocumentation(candidate); doc != nil {
-				attr.Documentation = doc
+			if bestCount > 0 {
+				if doc := schemaDocumentation(bestDoc); doc != nil {
+					attr.Documentation = doc
+				}
 			}
 		}
 	}
