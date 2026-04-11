@@ -214,6 +214,10 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		validateAttributes(node, version, spec, iabAnalysis, extensionBackport)
 	}
 
+	if spec != nil && spec.RequiresValue && strings.TrimSpace(node.Content) == "" {
+		markFailure(iabAnalysis, fmt.Sprintf("node %s requires a non-empty text value", spec.Name))
+	}
+
 	if isExtensionContainerSpec(spec) {
 		applyExtensionValidators(result, node, version)
 	}

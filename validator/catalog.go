@@ -67,6 +67,7 @@ type NodeSpec struct {
 	AllowUnknownAttributes bool
 	SupportsExtensions     bool
 	NeedsCDATA             bool // Node text content must be wrapped in CDATA when generating VAST.
+	RequiresValue          bool // Node text content must be non-empty.
 	Documentation          *Documentation
 }
 
@@ -249,7 +250,7 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 
 			"Advertiser":         {Name: "Advertiser", Versions: supported30Plus, Optional: true},
 			"Pricing":            {Name: "Pricing", Versions: supported30Plus, Optional: true},
-			"AdServingId":        {Name: "AdServingId", Versions: supported40Plus},
+			"AdServingId":        {Name: "AdServingId", Versions: supported41Plus},
 			"Category":           {Name: "Category", Versions: supported30Plus, Optional: true, Multiple: true},
 			"ViewableImpression": {Name: "ViewableImpression", Versions: supported40Plus, Optional: true},
 			"Expires":            {Name: "Expires", Versions: supported30Plus, Optional: true},
@@ -279,8 +280,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"AdSystem": {
-		Name:     "AdSystem",
-		Versions: supported20Plus,
+		Name:          "AdSystem",
+		Versions:      supported20Plus,
+		RequiresValue: true,
 		Attributes: map[string]*AttributeSpec{
 			"version": {Name: "version", Versions: supported30Plus},
 		},
@@ -299,12 +301,14 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"AdTitle": {
-		Name:     "AdTitle",
-		Versions: supported20Plus,
+		Name:          "AdTitle",
+		Versions:      supported20Plus,
+		RequiresValue: true,
 	},
 	"AdServingId": {
-		Name:     "AdServingId",
-		Versions: supported40Plus,
+		Name:          "AdServingId",
+		Versions:      supported41Plus,
+		RequiresValue: true,
 	},
 	"Advertiser": {
 		Name:     "Advertiser",

@@ -24,6 +24,7 @@ func cloneNodeSpec(src *NodeSpec) *NodeSpec {
 		AllowUnknownAttributes: src.AllowUnknownAttributes,
 		SupportsExtensions:     src.SupportsExtensions,
 		NeedsCDATA:             src.NeedsCDATA,
+		RequiresValue:          src.RequiresValue,
 		Documentation:          cloneDocumentation(src.Documentation),
 	}
 	if len(src.Attributes) > 0 {
