@@ -643,8 +643,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"IconClickThrough": {
-		Name:     "IconClickThrough",
-		Versions: supported30Plus,
+		Name:       "IconClickThrough",
+		Versions:   supported30Plus,
+		NeedsCDATA: true,
 	},
 	"IconClickTracking": {
 		Name:     "IconClickTracking",
@@ -849,9 +850,10 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"ClickTracking": {
-		Name:       "ClickTracking",
-		Versions:   supported20Plus,
-		NeedsCDATA: true,
+		Name:               "ClickTracking",
+		Versions:           supported20Plus,
+		SupportsExtensions: true,
+		NeedsCDATA:         true,
 		Attributes: map[string]*AttributeSpec{
 			"id": {Name: "id", Versions: supported30Plus},
 		},
