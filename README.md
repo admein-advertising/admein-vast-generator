@@ -1,10 +1,10 @@
 # VAST Generator for Go
 
-A comprehensive Go library for generating and parsing IAB VAST (Video Ad Serving Template) XML documents. This package provides full support for VAST 4.2 specification with type-safe structures and validation.
+A comprehensive Go library for generating and parsing IAB VAST (Video Ad Serving Template) XML documents. This package provides full support for VAST 2.0-4.2 specification with type-safe structures and validation.
 
 ## Features
 
-- **Full VAST 4.2 Support** - Complete implementation of IAB VAST 4.2 specification
+- **Full VAST 2.0-4.2 Support** - Complete implementation of IAB VAST 4.2 specification
 - **Type Safety** - Strongly typed Go structures with XML marshaling/unmarshaling
 - **Pattern Validation** - Built-in validation for VAST-specific patterns and constraints
 - **Memory Efficient** - Stream-based XML parsing to handle large VAST documents
@@ -318,7 +318,7 @@ v.Ad = append(v.Ad, vast.Ad{
 
 This library is built to comply with:
 
-- [IAB VAST 4.2 Specification](https://iabtechlab.com/standards/vast/)
+- [IAB VAST Specification](https://iabtechlab.com/standards/vast/)
 - [IAB Tech Lab Guidelines](https://iabtechlab.com/)
 - Go best practices and idioms
 - XML Schema validation
