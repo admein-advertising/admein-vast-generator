@@ -39,6 +39,8 @@ const (
 	OtherAdInteraction       TrackingEvent = "otherAdInteraction"
 	InteractiveStart         TrackingEvent = "interactiveStart"
 	FullscreenEvent          TrackingEvent = "fullscreen"
+	ExitFullscreenEvent      TrackingEvent = "exitFullscreen"
+	NotUsedEvent             TrackingEvent = "notUsed"
 )
 
 // TrackingEvents contains a collection of tracking URLs for ad measurement.

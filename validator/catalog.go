@@ -911,6 +911,8 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 						string(vast.OtherAdInteraction),
 						string(vast.InteractiveStart),
 						string(vast.FullscreenEvent),
+						string(vast.ExitFullscreenEvent),
+						string(vast.NotUsedEvent),
 					},
 				},
 			},
