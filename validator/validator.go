@@ -141,7 +141,7 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	rootVersionSupported := rootSpec.supports(version)
 
 	rootPointer := buildSourcePointer("", rootNodeName, 1)
-	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false, rootPointer)
+	rootResult := validateNodeRecursive(root, version, cfg, rootSpec, nil, false, "", false, rootPointer)
 	if !rootVersionSupported {
 		iab := rootResult.addAnalysis(IABAnalysisCategory)
 		markFailure(iab, fmt.Sprintf("Unsupported %s version: %s", rootNodeName, version))
@@ -154,7 +154,7 @@ func Validate(raw []byte, opts ...Option) (*ValidationResult, error) {
 	return &ValidationResult{Version: version, Root: rootResult, Summaries: summarizeCategories(rootResult)}, nil
 }
 
-func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config, spec *NodeSpec, parentSpec *NodeSpec, parentAllowsUnknown bool, sourcePointer string) *NodeResult {
+func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config, spec *NodeSpec, parentSpec *NodeSpec, parentAllowsUnknown bool, extensionType string, inBackportSubtree bool, sourcePointer string) *NodeResult {
 	result := &NodeResult{
 		Node:           node.localName(),
 		SourcePointer:  sourcePointer,
@@ -168,7 +168,16 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 			nodeCaseMismatch = canonicalName
 		}
 	}
-	extensionBackport := spec != nil && spec.SupportsExtensions && isExtensionContainerSpec(parentSpec)
+	currentExtensionType := extensionType
+	if spec != nil && isExtensionContainerSpec(spec) {
+		if value, ok := node.attrValue("type"); ok {
+			currentExtensionType = strings.TrimSpace(value)
+		} else {
+			currentExtensionType = ""
+		}
+	}
+	backportEligible := spec != nil && spec.SupportsExtensions && currentExtensionType != "" && strings.EqualFold(currentExtensionType, spec.Name)
+	currentBackportSubtree := inBackportSubtree || backportEligible
 
 	if spec != nil {
 		result.VersionSupport = spec.Versions
@@ -184,7 +193,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		if nodeCaseMismatch != "" && nodeCaseMismatch != result.Node {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s casing is invalid; use %s", result.Node, nodeCaseMismatch))
 		}
-		if !spec.supports(version) && !extensionBackport {
+		if !spec.supports(version) && !currentBackportSubtree {
 			markFailure(iabAnalysis, fmt.Sprintf("node %s is not supported in version %s", result.Node, version))
 		}
 		if parentSpec != nil && !parentAllowsUnknown {
@@ -210,8 +219,8 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 		}
 	}
 
-	if !parentAllowsUnknown || extensionBackport {
-		validateAttributes(node, version, spec, iabAnalysis, extensionBackport)
+	if !parentAllowsUnknown || currentBackportSubtree {
+		validateAttributes(node, version, spec, iabAnalysis, currentBackportSubtree)
 	}
 
 	if spec != nil && spec.RequiresValue && strings.TrimSpace(node.Content) == "" {
@@ -255,7 +264,7 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 			childSpec, _ = cfg.catalog.node(childName)
 		}
 		childPointer := buildSourcePointer(sourcePointer, childName, childOccurrences[childName])
-		childResult := validateNodeRecursive(child, version, cfg, childSpec, spec, childAllowsUnknown, childPointer)
+		childResult := validateNodeRecursive(child, version, cfg, childSpec, spec, childAllowsUnknown, currentExtensionType, currentBackportSubtree, childPointer)
 		result.Children = append(result.Children, childResult)
 	}
 

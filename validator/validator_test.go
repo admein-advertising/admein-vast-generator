@@ -958,6 +958,86 @@ func TestValidate_ExtensionUniversalAdIdBackport(t *testing.T) {
 	}
 }
 
+func TestValidate_ExtensionAdVerificationsBackport(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Extensions>
+				<Extension type="AdVerifications">
+					<AVID>
+						<AdVerifications>
+							<Verification vendor="iabtechlab">
+								<JavaScriptResource><![CDATA[https://example.com/verification.js]]></JavaScriptResource>
+							</Verification>
+						</AdVerifications>
+					</AVID>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	for _, nodeName := range []string{"AdVerifications", "Verification", "JavaScriptResource"} {
+		node := findNode(result.Root, nodeName)
+		if node == nil {
+			t.Fatalf("expected %s node in result", nodeName)
+		}
+		analysis := node.Analyses[IABAnalysisCategory]
+		if analysis == nil || analysis.Status != StatusPass {
+			t.Fatalf("expected %s backport to pass, got %+v", nodeName, analysis)
+		}
+	}
+}
+
+func TestValidate_ExtensionAdVerificationsTypeMismatchFails(t *testing.T) {
+	resetCustom(t)
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="1">
+		<InLine>
+			<AdSystem>Example</AdSystem>
+			<Impression><![CDATA[https://example.com/imp]]></Impression>
+			<Extensions>
+				<Extension type="AVID">
+					<AdVerifications>
+						<Verification vendor="iabtechlab">
+							<JavaScriptResource><![CDATA[https://example.com/verification.js]]></JavaScriptResource>
+						</Verification>
+					</AdVerifications>
+				</Extension>
+			</Extensions>
+		</InLine>
+	</Ad>
+</VAST>`
+
+	result, err := Validate([]byte(xml), DisableHTTPValidators())
+	if err != nil {
+		t.Fatalf("validate returned error: %v", err)
+	}
+
+	adVerifications := findNode(result.Root, "AdVerifications")
+	if adVerifications == nil {
+		t.Fatalf("expected AdVerifications node in result")
+	}
+	analysis := adVerifications.Analyses[IABAnalysisCategory]
+	if analysis == nil || analysis.Status != StatusFail {
+		t.Fatalf("expected AdVerifications to fail with mismatched extension type, got %+v", analysis)
+	}
+	joined := strings.Join(analysis.Reasons, ";")
+	if !strings.Contains(joined, "not supported") {
+		t.Fatalf("expected failure reason mentioning support, got %s", joined)
+	}
+}
+
 func TestValidate_ExtensionUniversalAdIdMissingChild(t *testing.T) {
 	resetCustom(t)
 	xml := `<?xml version="1.0" encoding="UTF-8"?>
