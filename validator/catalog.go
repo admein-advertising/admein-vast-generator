@@ -409,8 +409,9 @@ var defaultCatalog = &Catalog{Nodes: map[string]*NodeSpec{
 		},
 	},
 	"AdVerifications": {
-		Name:     "AdVerifications",
-		Versions: supported40Plus,
+		Name:               "AdVerifications",
+		Versions:           supported40Plus,
+		SupportsExtensions: true,
 		Children: map[string]*ChildSpec{
 			"Verification": {Name: "Verification", Versions: supported40Plus, Multiple: true},
 		},
