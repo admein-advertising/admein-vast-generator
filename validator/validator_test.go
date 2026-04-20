@@ -1033,8 +1033,8 @@ func TestValidate_ExtensionAdVerificationsTypeMismatchFails(t *testing.T) {
 		t.Fatalf("expected AdVerifications to fail with mismatched extension type, got %+v", analysis)
 	}
 	joined := strings.Join(analysis.Reasons, ";")
-	if !strings.Contains(joined, "not supported") {
-		t.Fatalf("expected failure reason mentioning support, got %s", joined)
+	if !strings.Contains(joined, "Extension type") {
+		t.Fatalf("expected failure reason mentioning Extension type, got %s", joined)
 	}
 }
 
