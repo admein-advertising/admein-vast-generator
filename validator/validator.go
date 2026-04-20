@@ -199,10 +199,10 @@ func validateNodeRecursive(node *genericNode, version vast.Version, cfg *config,
 			reportedBackportRequirement := false
 			if spec.SupportsExtensions && currentInExtensionContainer {
 				if currentExtensionType == "" {
-					markFailure(iabAnalysis, fmt.Sprintf("Extension type must be %s", spec.Name))
+					markFailure(iabAnalysis, fmt.Sprintf("Extension attribute type must be %s. Add the attribute type='%s' to the extension node.", spec.Name, spec.Name))
 					reportedBackportRequirement = true
 				} else if !strings.EqualFold(currentExtensionType, spec.Name) {
-					markFailure(iabAnalysis, fmt.Sprintf("Extension type %s does not match %s", currentExtensionType, spec.Name))
+					markFailure(iabAnalysis, fmt.Sprintf("Extension attribute type %s does not match %s", currentExtensionType, spec.Name))
 					reportedBackportRequirement = true
 				}
 			}
